@@ -93,18 +93,6 @@ export function ItineraryPlanner({
           {/* Action Tools */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }} className="no-print">
             <button
-              onClick={() => {
-                const vault = document.getElementById('vault');
-                if (vault) vault.scrollIntoView({ behavior: 'smooth' });
-              }}
-              className="btn-outline btn-sm"
-              style={{ padding: '0.6rem 1.2rem', borderRadius: '25px', fontSize: '0.85rem', fontWeight: 700, borderColor: '#111111', color: '#111111' }}
-            >
-              <FileText size={15} />
-              <span>Apple Notes &amp; Tasks</span>
-            </button>
-
-            <button
               onClick={onOpenAddModal}
               className="btn-primary btn-sm"
               style={{ background: '#111111', color: '#ffffff', border: 'none', fontWeight: 700, padding: '0.6rem 1.35rem', borderRadius: '25px', fontSize: '0.85rem' }}
