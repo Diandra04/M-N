@@ -109,7 +109,30 @@ export function SecretVault({
   const [newTask, setNewTask] = useState('');
   const [newDate, setNewDate] = useState('2026-10-15');
   const [newCategory, setNewCategory] = useState('Civil Ceremony');
-  const [newListType, setNewListType] = useState('SHARED');
+
+  const handleAddSharedTaskSubmit = (e) => {
+    e.preventDefault();
+    if (!newTask.trim() || !onAddTodo) return;
+    const dayLabel = newDate === '2026-10-14' ? 'Wednesday, Oct 14' 
+      : newDate === '2026-10-15' ? 'Thursday, Oct 15' 
+      : newDate === '2026-10-16' ? 'Friday, Oct 16' 
+      : newDate === '2026-10-17' ? 'Saturday, Oct 17' 
+      : newDate;
+
+    onAddTodo({
+      id: 'task-' + Date.now(),
+      task: newTask.trim(),
+      date: newDate,
+      dayLabel,
+      category: newCategory,
+      completed: false,
+      signedByManzi: isManzi,
+      signedByNikita: isNikita,
+      listType: 'SHARED'
+    });
+
+    setNewTask('');
+  };
 
   // Calendar View Mode State ('OCTOBER' | 'SEPTEMBER')
   const [calendarViewMode, setCalendarViewMode] = useState('OCTOBER');
@@ -1042,6 +1065,56 @@ export function SecretVault({
                 {meetingRequests.filter(m => m.status === 'PENDING').length} Pending Invites →
               </div>
             </div>
+
+            {/* Card 7: Personal Note Pad (Warm Sunset Gold) */}
+            <div 
+              onClick={() => setActiveTab('NOTES')}
+              style={{
+                background: activeTab === 'NOTES' 
+                  ? 'linear-gradient(135deg, #3A2510 0%, #5C3A16 100%)' 
+                  : 'linear-gradient(135deg, #24170A 0%, #190F06 100%)',
+                color: '#ffffff',
+                border: activeTab === 'NOTES' ? '2px solid #FB8C00' : '1px solid rgba(251, 140, 0, 0.35)',
+                borderRadius: '18px',
+                padding: '1.25rem',
+                cursor: 'pointer',
+                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                boxShadow: activeTab === 'NOTES' ? '0 10px 28px rgba(251, 140, 0, 0.3)' : '0 4px 12px rgba(0,0,0,0.2)',
+                transform: activeTab === 'NOTES' ? 'translateY(-3px)' : 'none',
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'space-between',
+                minHeight: '135px'
+              }}
+            >
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <FileText size={22} style={{ color: '#FFB74D' }} />
+                  <span style={{
+                    fontSize: '0.65rem',
+                    fontWeight: 800,
+                    padding: '0.2rem 0.6rem',
+                    borderRadius: '12px',
+                    background: '#EF6C00',
+                    color: '#ffffff',
+                    letterSpacing: '0.05em',
+                    textTransform: 'uppercase'
+                  }}>
+                    NOTES
+                  </span>
+                </div>
+                <h3 style={{ fontSize: '1.15rem', fontWeight: 700, margin: '0.65rem 0 0.2rem 0', fontFamily: 'var(--font-serif)', fontStyle: 'normal', color: '#ffffff' }}>
+                  Personal Note Pad
+                </h3>
+                <p style={{ fontSize: '0.78rem', margin: 0, color: 'rgba(255, 255, 255, 0.75)' }}>
+                  Private notepad &amp; freeform lists
+                </p>
+              </div>
+
+              <div style={{ fontSize: '0.75rem', fontWeight: 700, marginTop: '0.85rem', borderTop: '1px solid rgba(251, 140, 0, 0.25)', paddingTop: '0.5rem', color: '#FFE0B2' }}>
+                Auto-saved to {currentUser || 'Guest'} →
+              </div>
+            </div>
           </div>
 
           {/* ACTIVE TOOL FEATURE VIEW */}
@@ -1692,6 +1765,63 @@ export function SecretVault({
                   </div>
                 </div>
 
+                {/* Form: Type & Add New Shared Couple Task */}
+                <form onSubmit={handleAddSharedTaskSubmit} style={{ background: '#18181c', padding: '1.25rem', borderRadius: '14px', border: '1px solid rgba(255,255,255,0.15)', marginBottom: '1.75rem' }}>
+                  <h4 style={{ fontSize: '0.92rem', fontWeight: 700, color: '#ffffff', textTransform: 'uppercase', marginBottom: '0.85rem' }}>
+                    + Type &amp; Add New Shared Task to Couple Checklist
+                  </h4>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '0.75rem', alignItems: 'end' }}>
+                    <div style={{ flex: 2 }}>
+                      <label className="form-label" style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.7)' }}>Task Description</label>
+                      <input
+                        type="text"
+                        value={newTask}
+                        onChange={(e) => setNewTask(e.target.value)}
+                        placeholder="Type task (e.g. Confirm Marriage Witness signatures)..."
+                        className="form-input"
+                        style={{ padding: '0.5rem 0.8rem', fontSize: '0.85rem', background: '#121214', color: '#ffffff', borderColor: 'rgba(255,255,255,0.2)' }}
+                        required
+                      />
+                    </div>
+
+                    <div>
+                      <label className="form-label" style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.7)' }}>Target Date</label>
+                      <select
+                        value={newDate}
+                        onChange={(e) => setNewDate(e.target.value)}
+                        className="form-select"
+                        style={{ padding: '0.5rem 0.8rem', fontSize: '0.85rem', background: '#121214', color: '#ffffff', borderColor: 'rgba(255,255,255,0.2)' }}
+                      >
+                        <option value="2026-10-14">Wed Oct 14 - Check-in &amp; Marriage Prep</option>
+                        <option value="2026-10-15">Thu Oct 15 - Civil Marriage Day</option>
+                        <option value="2026-10-16">Fri Oct 16 - Post-Wedding Dinner</option>
+                        <option value="2026-10-17">Sat Oct 17 - Roadtrip Departure</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="form-label" style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.7)' }}>Category</label>
+                      <select
+                        value={newCategory}
+                        onChange={(e) => setNewCategory(e.target.value)}
+                        className="form-select"
+                        style={{ padding: '0.5rem 0.8rem', fontSize: '0.85rem', background: '#121214', color: '#ffffff', borderColor: 'rgba(255,255,255,0.2)' }}
+                      >
+                        <option value="Civil Ceremony">Civil Ceremony</option>
+                        <option value="Outfits & Grooming">Outfits &amp; Grooming</option>
+                        <option value="Dining & Celebration">Dining &amp; Celebration</option>
+                        <option value="Photography">Photography</option>
+                        <option value="Travel & Airbnb">Travel &amp; Airbnb</option>
+                      </select>
+                    </div>
+
+                    <button type="submit" className="btn-primary btn-sm" style={{ background: '#ffffff', color: '#000000', border: 'none', fontWeight: 700, padding: '0.55rem 1.25rem' }}>
+                      <Plus size={15} /> Add Task
+                    </button>
+                  </div>
+                </form>
+
                 <div>
                   {filteredSharedTodos.length === 0 ? (
                     <div style={{ padding: '2rem', textAlign: 'center', color: 'rgba(255,255,255,0.5)' }}>
@@ -2022,6 +2152,69 @@ export function SecretVault({
                       })}
                     </div>
                   )}
+                </div>
+              </div>
+            )}
+
+            {/* FEATURE VIEW 7: PERSONAL NOTE PAD */}
+            {activeTab === 'NOTES' && (
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem', borderBottom: '1px solid rgba(255,255,255,0.12)', paddingBottom: '1rem', flexWrap: 'wrap', gap: '0.75rem' }}>
+                  <div>
+                    <h3 style={{ fontSize: '1.6rem', fontFamily: 'var(--font-serif)', fontStyle: 'normal', fontWeight: 600, color: '#ffffff', margin: 0 }}>
+                      {currentUser === 'MANZI' ? "Manzi's Personal Note Pad" : currentUser === 'NIKITA' ? "Nikita's Personal Note Pad" : "Personal Note Pad"}
+                    </h3>
+                    <p style={{ fontSize: '0.82rem', color: 'rgba(255,255,255,0.6)', margin: '0.2rem 0 0 0' }}>
+                      Clean, private notepad isolated per logged-in user account. Type paragraphs, bullet lists, or checklists!
+                    </p>
+                  </div>
+
+                  <div style={{ display: 'flex', gap: '0.5rem' }}>
+                    <button
+                      type="button"
+                      onClick={() => handleSaveNoteContent(personalNotes + (personalNotes.endsWith('\n') || personalNotes === '' ? '• ' : '\n• '))}
+                      className="btn-outline btn-sm"
+                      style={{ color: '#ffffff', borderColor: 'rgba(255,255,255,0.3)', fontSize: '0.75rem' }}
+                    >
+                      + Bullet Point
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleSaveNoteContent(personalNotes + (personalNotes.endsWith('\n') || personalNotes === '' ? '[ ] ' : '\n[ ] '))}
+                      className="btn-outline btn-sm"
+                      style={{ color: '#ffffff', borderColor: 'rgba(255,255,255,0.3)', fontSize: '0.75rem' }}
+                    >
+                      + Checkbox
+                    </button>
+                  </div>
+                </div>
+
+                <div style={{ background: '#18181c', border: '1px solid rgba(255,255,255,0.18)', borderRadius: '16px', padding: '1.5rem' }}>
+                  <textarea
+                    value={personalNotes}
+                    onChange={(e) => handleSaveNoteContent(e.target.value)}
+                    onKeyDown={handleNotesKeyDown}
+                    placeholder="Type your notes, paragraphs, bullet lists (• ), or checklists ([ ] )..."
+                    rows={14}
+                    style={{
+                      width: '100%',
+                      boxSizing: 'border-box',
+                      background: '#121214',
+                      border: '1px solid rgba(255, 255, 255, 0.2)',
+                      borderRadius: '12px',
+                      padding: '1.25rem',
+                      color: '#ffffff',
+                      fontFamily: 'Inter, system-ui, sans-serif',
+                      fontSize: '1rem',
+                      lineHeight: 1.7,
+                      resize: 'vertical',
+                      outline: 'none'
+                    }}
+                  />
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '0.75rem', fontSize: '0.78rem', color: 'rgba(255,255,255,0.5)' }}>
+                    <span>Press Enter for automatic bullet/checkbox continuation</span>
+                    <span style={{ color: '#22c55e', fontWeight: 600 }}>Auto-saved to {currentUser || 'Guest'} account</span>
+                  </div>
                 </div>
               </div>
             )}
