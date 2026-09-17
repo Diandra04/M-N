@@ -48,15 +48,7 @@ export function Hero({ couple }) {
       color: '#ffffff',
       borderBottom: '1px solid var(--border-color)'
     }}>
-      <div style={{
-        position: 'absolute',
-        top: '2rem',
-        right: '3.5rem',
-        display: 'flex',
-        alignItems: 'baseline',
-        gap: '0.85rem',
-        zIndex: 10
-      }}>
+      <div className="hero-countdown-badge">
         <span style={{ 
           fontFamily: 'var(--font-serif)', 
           fontSize: 'clamp(6rem, 12vw, 10.5rem)', 
