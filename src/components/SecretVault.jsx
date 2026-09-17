@@ -156,6 +156,64 @@ export function SecretVault({
     localStorage.setItem(getNoteStorageKey(currentUser), val);
   };
 
+  const [newChecklistItem, setNewChecklistItem] = useState('');
+
+  const handleAddChecklistItem = (e) => {
+    e.preventDefault();
+    if (!newChecklistItem.trim()) return;
+    const currentText = personalNotes.trim();
+    const formattedItem = `[ ] ${newChecklistItem.trim()}`;
+    const newText = currentText ? `${currentText}\n${formattedItem}` : formattedItem;
+    handleSaveNoteContent(newText);
+    setNewChecklistItem('');
+  };
+
+  const handleToggleCheckline = (lineIndex) => {
+    const lines = personalNotes.split('\n');
+    if (lineIndex < 0 || lineIndex >= lines.length) return;
+    let line = lines[lineIndex];
+    const trimmed = line.trim();
+    if (trimmed.startsWith('[ ]')) {
+      lines[lineIndex] = line.replace('[ ]', '[x]');
+    } else if (trimmed.startsWith('[x]') || trimmed.startsWith('[X]')) {
+      lines[lineIndex] = line.replace(/\[[xX]\]/, '[ ]');
+    } else {
+      lines[lineIndex] = `[x] ${line}`;
+    }
+    handleSaveNoteContent(lines.join('\n'));
+  };
+
+  const handleDeleteCheckline = (lineIndex) => {
+    const lines = personalNotes.split('\n');
+    lines.splice(lineIndex, 1);
+    handleSaveNoteContent(lines.join('\n'));
+  };
+
+  const parsedNoteLines = personalNotes
+    .split('\n')
+    .map((line, idx) => {
+      const trimmed = line.trim();
+      const isChecked = trimmed.startsWith('[x]') || trimmed.startsWith('[X]');
+      const isUnchecked = trimmed.startsWith('[ ]');
+      const isBullet = trimmed.startsWith('•') || trimmed.startsWith('-') || trimmed.startsWith('*');
+      
+      let text = line;
+      if (isChecked) text = line.replace(/^\[[xX]\]\s*/, '');
+      else if (isUnchecked) text = line.replace(/^\[ \]\s*/, '');
+      else if (isBullet) text = line.replace(/^[•\-\*]\s*/, '');
+
+      return {
+        originalIndex: idx,
+        line,
+        trimmed,
+        isCheckable: isChecked || isUnchecked || isBullet || trimmed.length > 0,
+        isChecked,
+        isBullet,
+        text
+      };
+    })
+    .filter(item => item.trimmed.length > 0);
+
   const handleNotesKeyDown = (e) => {
     if (e.key === 'Enter') {
       e.preventDefault();
@@ -2165,57 +2223,222 @@ export function SecretVault({
                       {currentUser === 'MANZI' ? "Manzi's Personal Note Pad" : currentUser === 'NIKITA' ? "Nikita's Personal Note Pad" : "Personal Note Pad"}
                     </h3>
                     <p style={{ fontSize: '0.82rem', color: 'rgba(255,255,255,0.6)', margin: '0.2rem 0 0 0' }}>
-                      Clean, private notepad isolated per logged-in user account. Type paragraphs, bullet lists, or checklists!
+                      Clean, private notepad isolated per logged-in user account. Auto-saved in real time.
                     </p>
                   </div>
 
-                  <div style={{ display: 'flex', gap: '0.5rem' }}>
+                  {/* Mode Selector Toggle */}
+                  <div style={{
+                    display: 'inline-flex',
+                    background: '#09090b',
+                    padding: '0.25rem',
+                    borderRadius: '12px',
+                    border: '1px solid rgba(255, 255, 255, 0.15)'
+                  }}>
                     <button
-                      type="button"
-                      onClick={() => handleSaveNoteContent(personalNotes + (personalNotes.endsWith('\n') || personalNotes === '' ? '• ' : '\n• '))}
-                      className="btn-outline btn-sm"
-                      style={{ color: '#ffffff', borderColor: 'rgba(255,255,255,0.3)', fontSize: '0.75rem' }}
+                      onClick={() => setNotesViewMode('CHECKLIST')}
+                      style={{
+                        padding: '0.4rem 1rem',
+                        fontSize: '0.8rem',
+                        fontWeight: 700,
+                        borderRadius: '9px',
+                        border: 'none',
+                        cursor: 'pointer',
+                        background: notesViewMode === 'CHECKLIST' ? '#ffffff' : 'transparent',
+                        color: notesViewMode === 'CHECKLIST' ? '#000000' : 'rgba(255, 255, 255, 0.7)',
+                        transition: 'all 0.2s ease',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '0.35rem'
+                      }}
                     >
-                      + Bullet Point
+                      <CheckCircle2 size={14} /> Interactive Checklist
                     </button>
                     <button
-                      type="button"
-                      onClick={() => handleSaveNoteContent(personalNotes + (personalNotes.endsWith('\n') || personalNotes === '' ? '[ ] ' : '\n[ ] '))}
-                      className="btn-outline btn-sm"
-                      style={{ color: '#ffffff', borderColor: 'rgba(255,255,255,0.3)', fontSize: '0.75rem' }}
+                      onClick={() => setNotesViewMode('EDITOR')}
+                      style={{
+                        padding: '0.4rem 1rem',
+                        fontSize: '0.8rem',
+                        fontWeight: 700,
+                        borderRadius: '9px',
+                        border: 'none',
+                        cursor: 'pointer',
+                        background: notesViewMode === 'EDITOR' ? '#ffffff' : 'transparent',
+                        color: notesViewMode === 'EDITOR' ? '#000000' : 'rgba(255, 255, 255, 0.7)',
+                        transition: 'all 0.2s ease',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '0.35rem'
+                      }}
                     >
-                      + Checkbox
+                      <FileText size={14} /> Paragraph Editor
                     </button>
                   </div>
                 </div>
 
-                <div style={{ background: '#18181c', border: '1px solid rgba(255,255,255,0.18)', borderRadius: '16px', padding: '1.5rem' }}>
-                  <textarea
-                    value={personalNotes}
-                    onChange={(e) => handleSaveNoteContent(e.target.value)}
-                    onKeyDown={handleNotesKeyDown}
-                    placeholder="Type your notes, paragraphs, bullet lists (• ), or checklists ([ ] )..."
-                    rows={14}
-                    style={{
-                      width: '100%',
-                      boxSizing: 'border-box',
-                      background: '#121214',
-                      border: '1px solid rgba(255, 255, 255, 0.2)',
-                      borderRadius: '12px',
-                      padding: '1.25rem',
-                      color: '#ffffff',
-                      fontFamily: 'Inter, system-ui, sans-serif',
-                      fontSize: '1rem',
-                      lineHeight: 1.7,
-                      resize: 'vertical',
-                      outline: 'none'
-                    }}
-                  />
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '0.75rem', fontSize: '0.78rem', color: 'rgba(255,255,255,0.5)' }}>
-                    <span>Press Enter for automatic bullet/checkbox continuation</span>
-                    <span style={{ color: '#22c55e', fontWeight: 600 }}>Auto-saved to {currentUser || 'Guest'} account</span>
+                {notesViewMode === 'CHECKLIST' ? (
+                  /* MODERNIZED INTERACTIVE CHECKLIST VIEW */
+                  <div>
+                    {/* Add Item Form */}
+                    <form onSubmit={handleAddChecklistItem} style={{ background: '#18181c', padding: '1.25rem', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.15)', marginBottom: '1.5rem' }}>
+                      <label className="form-label" style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.7)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                        + Add New Checklist Item
+                      </label>
+                      <div style={{ display: 'flex', gap: '0.75rem', marginTop: '0.4rem' }}>
+                        <input
+                          type="text"
+                          value={newChecklistItem}
+                          onChange={(e) => setNewChecklistItem(e.target.value)}
+                          placeholder="Type checklist item (e.g. Bring passport to marriage registry)..."
+                          className="form-input"
+                          style={{ flex: 1, padding: '0.6rem 0.9rem', fontSize: '0.9rem', background: '#121214', color: '#ffffff', borderColor: 'rgba(255,255,255,0.2)' }}
+                        />
+                        <button type="submit" className="btn-primary btn-sm" style={{ background: '#ffffff', color: '#000000', border: 'none', fontWeight: 700, padding: '0.6rem 1.4rem', whiteSpace: 'nowrap' }}>
+                          <Plus size={15} /> Add Item
+                        </button>
+                      </div>
+                    </form>
+
+                    {/* Progress Bar Header */}
+                    {parsedNoteLines.length > 0 && (
+                      <div style={{ background: '#18181c', padding: '1rem 1.25rem', borderRadius: '14px', border: '1px solid rgba(255,255,255,0.15)', marginBottom: '1.25rem' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem', fontSize: '0.82rem', fontWeight: 700, color: '#ffffff' }}>
+                          <span>Checklist Progress</span>
+                          <span style={{ color: '#22c55e' }}>
+                            {parsedNoteLines.filter(i => i.isChecked).length} / {parsedNoteLines.length} Completed ({Math.round((parsedNoteLines.filter(i => i.isChecked).length / parsedNoteLines.length) * 100)}%)
+                          </span>
+                        </div>
+                        <div style={{ height: '8px', width: '100%', background: '#121214', borderRadius: '4px', overflow: 'hidden' }}>
+                          <div style={{
+                            height: '100%',
+                            width: `${(parsedNoteLines.filter(i => i.isChecked).length / parsedNoteLines.length) * 100}%`,
+                            background: 'linear-gradient(90deg, #22c55e, #4ade80)',
+                            borderRadius: '4px',
+                            transition: 'width 0.3s ease'
+                          }} />
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Checklist Items List */}
+                    {parsedNoteLines.length === 0 ? (
+                      <div style={{ padding: '3rem', textAlign: 'center', background: '#18181c', border: '1px dashed rgba(255,255,255,0.2)', borderRadius: '16px', color: 'rgba(255,255,255,0.5)' }}>
+                        Your checklist is empty. Add your first item above!
+                      </div>
+                    ) : (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
+                        {parsedNoteLines.map((item) => (
+                          <div
+                            key={item.originalIndex}
+                            style={{
+                              background: '#18181c',
+                              border: item.isChecked ? '1px solid rgba(34, 197, 94, 0.3)' : '1px solid rgba(255, 255, 255, 0.15)',
+                              borderRadius: '12px',
+                              padding: '0.85rem 1.1rem',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'space-between',
+                              gap: '0.85rem',
+                              transition: 'all 0.2s ease'
+                            }}
+                          >
+                            <div
+                              onClick={() => handleToggleCheckline(item.originalIndex)}
+                              style={{ display: 'flex', alignItems: 'center', gap: '0.85rem', flex: 1, cursor: 'pointer' }}
+                            >
+                              {/* Sleek Custom Checkbox Circle */}
+                              <div style={{
+                                width: '22px',
+                                height: '22px',
+                                borderRadius: '50%',
+                                border: item.isChecked ? '2px solid #22c55e' : '2px solid rgba(255, 255, 255, 0.4)',
+                                background: item.isChecked ? '#22c55e' : 'transparent',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                transition: 'all 0.2s ease',
+                                flexShrink: 0
+                              }}>
+                                {item.isChecked && <Check size={14} style={{ color: '#ffffff', strokeWidth: 3 }} />}
+                              </div>
+
+                              <span style={{
+                                fontSize: '0.95rem',
+                                fontWeight: 500,
+                                color: item.isChecked ? 'rgba(255, 255, 255, 0.45)' : '#ffffff',
+                                textDecoration: item.isChecked ? 'line-through' : 'none',
+                                transition: 'all 0.2s ease'
+                              }}>
+                                {item.text}
+                              </span>
+                            </div>
+
+                            <button
+                              onClick={() => handleDeleteCheckline(item.originalIndex)}
+                              style={{ background: 'none', border: 'none', color: '#ff6b6b', cursor: 'pointer', padding: '0.2rem', opacity: 0.7 }}
+                              title="Delete item"
+                            >
+                              <Trash2 size={15} />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
-                </div>
+                ) : (
+                  /* FREEFORM PARAGRAPHS EDITOR MODE */
+                  <div style={{ background: '#18181c', border: '1px solid rgba(255,255,255,0.18)', borderRadius: '16px', padding: '1.5rem' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                      <span style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.6)', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600 }}>
+                        Freeform Text &amp; Notes
+                      </span>
+                      <div style={{ display: 'flex', gap: '0.5rem' }}>
+                        <button
+                          type="button"
+                          onClick={() => handleSaveNoteContent(personalNotes + (personalNotes.endsWith('\n') || personalNotes === '' ? '• ' : '\n• '))}
+                          className="btn-outline btn-sm"
+                          style={{ color: '#ffffff', borderColor: 'rgba(255,255,255,0.3)', fontSize: '0.75rem' }}
+                        >
+                          + Bullet Point
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleSaveNoteContent(personalNotes + (personalNotes.endsWith('\n') || personalNotes === '' ? '[ ] ' : '\n[ ] '))}
+                          className="btn-outline btn-sm"
+                          style={{ color: '#ffffff', borderColor: 'rgba(255,255,255,0.3)', fontSize: '0.75rem' }}
+                        >
+                          + Checkbox
+                        </button>
+                      </div>
+                    </div>
+
+                    <textarea
+                      value={personalNotes}
+                      onChange={(e) => handleSaveNoteContent(e.target.value)}
+                      onKeyDown={handleNotesKeyDown}
+                      placeholder="Type your notes, paragraphs, bullet lists (• ), or checklists ([ ] )..."
+                      rows={14}
+                      style={{
+                        width: '100%',
+                        boxSizing: 'border-box',
+                        background: '#121214',
+                        border: '1px solid rgba(255, 255, 255, 0.2)',
+                        borderRadius: '12px',
+                        padding: '1.25rem',
+                        color: '#ffffff',
+                        fontFamily: 'Inter, system-ui, sans-serif',
+                        fontSize: '1rem',
+                        lineHeight: 1.7,
+                        resize: 'vertical',
+                        outline: 'none'
+                      }}
+                    />
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '0.75rem', fontSize: '0.78rem', color: 'rgba(255,255,255,0.5)' }}>
+                      <span>Press Enter for automatic bullet/checkbox continuation</span>
+                      <span style={{ color: '#22c55e', fontWeight: 600 }}>Auto-saved to {currentUser || 'Guest'} account</span>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 
