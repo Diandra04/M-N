@@ -405,24 +405,26 @@ export function ItineraryPlanner({
                                     </span>
                                   </div>
 
-                                  {/* Person Name Badge Overlay on Front side (Pink for Nikita, Brown for Manzi, Green for Both) */}
-                                  <div style={{
-                                    position: 'absolute',
-                                    top: '0.85rem',
-                                    right: '0.85rem',
-                                    zIndex: 3,
-                                    background: targetWho === 'NIKITA' ? '#e08298' : targetWho === 'MANZI' ? '#8B5E3C' : '#588157',
-                                    color: '#ffffff',
-                                    padding: '0.35rem 0.85rem',
-                                    borderRadius: '16px',
-                                    fontSize: '0.75rem',
-                                    fontWeight: 700,
-                                    letterSpacing: '0.04em',
-                                    boxShadow: '0 4px 14px rgba(0,0,0,0.35)',
-                                    border: '1px solid rgba(255, 255, 255, 0.3)'
-                                  }}>
-                                    {targetWho === 'NIKITA' ? 'Nikita' : targetWho === 'MANZI' ? 'Manzi' : 'Both'}
-                                  </div>
+                                  {/* Person Name Badge Overlay on Front side (Only for Nikita or Manzi, hidden for Both) */}
+                                  {(targetWho === 'NIKITA' || targetWho === 'MANZI') && (
+                                    <div style={{
+                                      position: 'absolute',
+                                      top: '0.85rem',
+                                      right: '0.85rem',
+                                      zIndex: 3,
+                                      background: targetWho === 'NIKITA' ? '#e08298' : '#8B5E3C',
+                                      color: '#ffffff',
+                                      padding: '0.35rem 0.85rem',
+                                      borderRadius: '16px',
+                                      fontSize: '0.75rem',
+                                      fontWeight: 700,
+                                      letterSpacing: '0.04em',
+                                      boxShadow: '0 4px 14px rgba(0,0,0,0.35)',
+                                      border: '1px solid rgba(255, 255, 255, 0.3)'
+                                    }}>
+                                      {targetWho === 'NIKITA' ? 'Nikita' : 'Manzi'}
+                                    </div>
+                                  )}
 
                                   {/* Catchy Main Event Title Banner */}
                                   <div style={{
@@ -560,10 +562,10 @@ export function ItineraryPlanner({
                                     }} className="no-print">
                                       <button
                                         onClick={() => { if (onEditEvent) onEditEvent(evt); }}
-                                        className="btn-outline btn-sm"
-                                        style={{ padding: '0.25rem 0.65rem', fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-primary)', borderColor: 'var(--border-color)' }}
+                                        className="btn-primary btn-sm"
+                                        style={{ background: '#111111', color: '#ffffff', border: 'none', padding: '0.35rem 0.85rem', fontSize: '0.78rem', fontWeight: 700 }}
                                       >
-                                        <Edit size={12} /> Edit Event
+                                        <Edit size={12} /> Edit Event Details
                                       </button>
 
                                       <button
