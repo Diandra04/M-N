@@ -83,39 +83,24 @@ export function SecretVault({
   // Calendar View Mode State ('OCTOBER' | 'SEPTEMBER')
   const [calendarViewMode, setCalendarViewMode] = useState('OCTOBER');
 
-  // Apple Notes Workspace State
+  // Personal Notes Workspace State
   const [taskSubTab, setTaskSubTab] = useState('SHARED'); // 'SHARED' | 'NOTES'
-  const [activeNoteCategory, setActiveNoteCategory] = useState('TASKS'); // 'TASKS' | 'MANZI' | 'NIKITA' | 'PACKING'
   const [notesViewMode, setNotesViewMode] = useState('EDITOR'); // 'EDITOR' | 'CHECKLIST'
 
-  const getNoteStorageKey = (cat) => `mn_apple_note_${cat}_v2`;
-
-  const defaultNoteContents = {
-    TASKS: '[ ] Civil ceremony passports & marriage license\n[ ] Hair appointment & Barber appointment confirmation\n[ ] Check-in details for King Street West Airbnb\n[ ] Iron & steam wedding outfits\n[ ] Confirm restaurant dinner reservation',
-    MANZI: '• Suit & tie prep checklist\n• Vehicle inspection & roadtrip drive playlist\n• Groom vow final review\n• Rings safety pouch check',
-    NIKITA: '• Bridal gown & veil steamer\n• Nails appointment at J’adore Nails\n• Glam makeup kit & skincare prep\n• Bride vow final touchup',
-    PACKING: '[ ] Civil wedding attire & shoes\n[ ] Rings & ceremony documents\n[ ] Roadtrip snacks & travel bags\n[ ] Emergency clothing steamer & lint roller\n[ ] Celebration champagne glasses'
-  };
+  const getNoteStorageKey = (user) => `mn_personal_notes_${user || 'GUEST'}_v4`;
 
   const [personalNotes, setPersonalNotes] = useState(() => 
-    localStorage.getItem(getNoteStorageKey('TASKS')) || defaultNoteContents.TASKS
+    localStorage.getItem(getNoteStorageKey(currentUser)) || ''
   );
 
-  const handleSelectNoteCategory = (cat) => {
-    setActiveNoteCategory(cat);
-    const saved = localStorage.getItem(getNoteStorageKey(cat));
-    if (saved) {
-      setPersonalNotes(saved);
-    } else {
-      const def = defaultNoteContents[cat] || '• ';
-      setPersonalNotes(def);
-      localStorage.setItem(getNoteStorageKey(cat), def);
-    }
-  };
+  React.useEffect(() => {
+    const saved = localStorage.getItem(getNoteStorageKey(currentUser));
+    setPersonalNotes(saved !== null ? saved : '');
+  }, [currentUser]);
 
   const handleSaveNoteContent = (val) => {
     setPersonalNotes(val);
-    localStorage.setItem(getNoteStorageKey(activeNoteCategory), val);
+    localStorage.setItem(getNoteStorageKey(currentUser), val);
   };
 
   const handleNotesKeyDown = (e) => {
@@ -125,28 +110,37 @@ export function SecretVault({
       const value = e.target.value;
       const lineStart = value.lastIndexOf('\n', cursor - 1) + 1;
       const currentLine = value.substring(lineStart, cursor);
+      const trimmed = currentLine.trim();
 
-      let insertPrefix = '\n• ';
-      if (currentLine.trim().startsWith('[ ]') || currentLine.trim().startsWith('[x]')) {
+      let insertPrefix = '\n';
+
+      if (trimmed.startsWith('[ ]') || trimmed.startsWith('[x]') || trimmed.startsWith('[X]')) {
+        if (trimmed === '[ ]' || trimmed === '[x]' || trimmed === '[X]') {
+          const newValue = value.substring(0, lineStart) + value.substring(cursor);
+          handleSaveNoteContent(newValue);
+          setTimeout(() => {
+            if (e.target) e.target.selectionStart = e.target.selectionEnd = lineStart;
+          }, 0);
+          return;
+        }
         insertPrefix = '\n[ ] ';
-      } else if (currentLine.trim().startsWith('•')) {
+      } else if (trimmed.startsWith('•') || trimmed.startsWith('-') || trimmed.startsWith('*')) {
+        if (trimmed === '•' || trimmed === '-' || trimmed === '*') {
+          const newValue = value.substring(0, lineStart) + value.substring(cursor);
+          handleSaveNoteContent(newValue);
+          setTimeout(() => {
+            if (e.target) e.target.selectionStart = e.target.selectionEnd = lineStart;
+          }, 0);
+          return;
+        }
         insertPrefix = '\n• ';
       }
 
-      const trimmed = currentLine.trim();
-      if (trimmed === '•' || trimmed === '[ ]' || trimmed === '[x]') {
-        const newValue = value.substring(0, lineStart) + value.substring(cursor);
-        handleSaveNoteContent(newValue);
-        setTimeout(() => {
-          if (e.target) e.target.selectionStart = e.target.selectionEnd = lineStart;
-        }, 0);
-      } else {
-        const newValue = value.substring(0, cursor) + insertPrefix + value.substring(cursor);
-        handleSaveNoteContent(newValue);
-        setTimeout(() => {
-          if (e.target) e.target.selectionStart = e.target.selectionEnd = cursor + insertPrefix.length;
-        }, 0);
-      }
+      const newValue = value.substring(0, cursor) + insertPrefix + value.substring(cursor);
+      handleSaveNoteContent(newValue);
+      setTimeout(() => {
+        if (e.target) e.target.selectionStart = e.target.selectionEnd = cursor + insertPrefix.length;
+      }, 0);
     }
   };
 
@@ -1767,44 +1761,10 @@ export function SecretVault({
                   </div>
                 )}
 
-                {/* SUB-VIEW B: APPLE NOTES-STYLE INDIVIDUAL TASK NOTEPAD */}
+                {/* SUB-VIEW B: USER PERSONAL NOTES PAD */}
                 {taskSubTab === 'NOTES' && (
                   <div style={{ maxWidth: '850px', margin: '0 auto' }}>
                     
-                    {/* Note Category Folders Bar */}
-                    <div style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '0.5rem',
-                      marginBottom: '1rem',
-                      flexWrap: 'wrap'
-                    }}>
-                      {[
-                        { id: 'TASKS', label: 'Tasks & Checklists' },
-                        { id: 'MANZI', label: "Manzi's Notes" },
-                        { id: 'NIKITA', label: "Nikita's Notes" },
-                        { id: 'PACKING', label: 'Packing & Luggage List' }
-                      ].map(cat => (
-                        <button
-                          key={cat.id}
-                          onClick={() => handleSelectNoteCategory(cat.id)}
-                          style={{
-                            padding: '0.4rem 0.85rem',
-                            borderRadius: '12px',
-                            fontSize: '0.78rem',
-                            fontWeight: 600,
-                            border: activeNoteCategory === cat.id ? '1px solid #FFD60A' : '1px solid rgba(255,255,255,0.15)',
-                            background: activeNoteCategory === cat.id ? 'rgba(255, 214, 10, 0.15)' : '#18181c',
-                            color: activeNoteCategory === cat.id ? '#FFD60A' : 'rgba(255,255,255,0.7)',
-                            cursor: 'pointer',
-                            transition: 'all 0.2s'
-                          }}
-                        >
-                          {cat.label}
-                        </button>
-                      ))}
-                    </div>
-
                     <div style={{
                       background: '#1c1c1e',
                       border: '1px solid rgba(255, 214, 10, 0.35)',
@@ -1812,7 +1772,7 @@ export function SecretVault({
                       overflow: 'hidden',
                       boxShadow: '0 20px 40px rgba(0,0,0,0.6)'
                     }}>
-                      {/* Apple Notes Style Top Window Bar */}
+                      {/* Top Window Header Bar */}
                       <div style={{
                         background: '#2c2c2e',
                         padding: '0.75rem 1.25rem',
@@ -1827,12 +1787,12 @@ export function SecretVault({
                           <span style={{ width: '12px', height: '12px', borderRadius: '50%', background: '#FF5F56', display: 'inline-block' }} />
                           <span style={{ width: '12px', height: '12px', borderRadius: '50%', background: '#FFBD2E', display: 'inline-block' }} />
                           <span style={{ width: '12px', height: '12px', borderRadius: '50%', background: '#27C93F', display: 'inline-block' }} />
-                          <span style={{ fontSize: '0.85rem', fontWeight: 700, color: '#FFD60A', marginLeft: '0.5rem', letterSpacing: '0.04em' }}>
-                            Apple Notes • {activeNoteCategory === 'TASKS' ? 'Tasks & Checklists' : activeNoteCategory === 'MANZI' ? "Manzi's Pad" : activeNoteCategory === 'NIKITA' ? "Nikita's Pad" : 'Packing & Luggage'}
+                          <span style={{ fontSize: '0.9rem', fontWeight: 700, color: '#FFD60A', marginLeft: '0.5rem', letterSpacing: '0.04em' }}>
+                            {isManzi ? "Manzi's Private Notes" : isNikita ? "Nikita's Private Notes" : "Personal Notes Pad"}
                           </span>
                         </div>
 
-                        {/* Formatting Toolbar */}
+                        {/* Formatting Toolbar Controls */}
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'wrap' }}>
                           <button
                             onClick={() => {
@@ -1869,6 +1829,24 @@ export function SecretVault({
                             }}
                           >
                             + Bullet
+                          </button>
+                          <button
+                            onClick={() => {
+                              const heading = '\n# ';
+                              handleSaveNoteContent(personalNotes ? `${personalNotes}${heading}` : '# ');
+                            }}
+                            style={{
+                              background: 'rgba(255, 255, 255, 0.1)',
+                              color: '#ffffff',
+                              border: '1px solid rgba(255, 255, 255, 0.2)',
+                              borderRadius: '8px',
+                              padding: '0.25rem 0.6rem',
+                              fontSize: '0.72rem',
+                              fontWeight: 700,
+                              cursor: 'pointer'
+                            }}
+                          >
+                            + Heading
                           </button>
                           
                           {/* Mode Switcher: Editor vs Interactive Checklist */}
@@ -1916,7 +1894,7 @@ export function SecretVault({
                       {/* Notes Body Area */}
                       <div style={{ padding: '1.25rem' }}>
                         <div style={{ textAlign: 'center', fontSize: '0.72rem', color: 'rgba(255,255,255,0.45)', marginBottom: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-                          Saved • Today at {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          Auto-Saved • Today at {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                         </div>
 
                         {notesViewMode === 'EDITOR' ? (
@@ -1924,7 +1902,7 @@ export function SecretVault({
                             value={personalNotes}
                             onChange={(e) => handleSaveNoteContent(e.target.value)}
                             onKeyDown={handleNotesKeyDown}
-                            placeholder="Type your notes or tasks here... Press Enter for automatic bullets or checkboxes!"
+                            placeholder="Type your personal notes, paragraphs, bullets, or checklists here..."
                             rows={12}
                             style={{
                               width: '100%',
@@ -1942,79 +1920,87 @@ export function SecretVault({
                         ) : (
                           /* Interactive Checklist Mode */
                           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem', minHeight: '220px' }}>
-                            {personalNotes.split('\n').filter(l => l.trim().length > 0).map((line, idx) => {
-                              const isChecked = line.trim().startsWith('[x]') || line.trim().startsWith('[X]');
-                              const isCheckbox = line.trim().startsWith('[ ]') || isChecked;
-                              const cleanText = line.replace(/^(\[ \]|\[x\]|\[X\]|•|-|\*)\s*/, '');
+                            {personalNotes.trim().length === 0 ? (
+                              <div style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.9rem', fontStyle: 'italic', padding: '1rem 0', textAlign: 'center' }}>
+                                Your note pad is currently empty. Switch to Editor mode to write your notes or add tasks!
+                              </div>
+                            ) : (
+                              personalNotes.split('\n').filter(l => l.trim().length > 0).map((line, idx) => {
+                                const isChecked = line.trim().startsWith('[x]') || line.trim().startsWith('[X]');
+                                const isCheckbox = line.trim().startsWith('[ ]') || isChecked;
+                                const isHeading = line.trim().startsWith('#');
+                                const cleanText = line.replace(/^(\[ \]|\[x\]|\[X\]|•|-|\*|#+)\s*/, '');
 
-                              return (
-                                <div
-                                  key={idx}
-                                  onClick={() => {
-                                    if (isCheckbox) {
-                                      const lines = personalNotes.split('\n');
-                                      if (isChecked) {
-                                        lines[idx] = lines[idx].replace(/^\[x\]|\[X\]/, '[ ]');
-                                      } else {
-                                        lines[idx] = lines[idx].replace(/^\[ \]/, '[x]');
+                                return (
+                                  <div
+                                    key={idx}
+                                    onClick={() => {
+                                      if (isCheckbox) {
+                                        const lines = personalNotes.split('\n');
+                                        if (isChecked) {
+                                          lines[idx] = lines[idx].replace(/^\[x\]|\[X\]/, '[ ]');
+                                        } else {
+                                          lines[idx] = lines[idx].replace(/^\[ \]/, '[x]');
+                                        }
+                                        handleSaveNoteContent(lines.join('\n'));
                                       }
-                                      handleSaveNoteContent(lines.join('\n'));
-                                    }
-                                  }}
-                                  style={{
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: '0.75rem',
-                                    padding: '0.6rem 0.85rem',
-                                    borderRadius: '10px',
-                                    background: isChecked ? 'rgba(255,255,255,0.04)' : 'rgba(255,255,255,0.08)',
-                                    border: isChecked ? '1px solid rgba(255,255,255,0.08)' : '1px solid rgba(255,255,255,0.15)',
-                                    cursor: isCheckbox ? 'pointer' : 'default',
-                                    transition: 'all 0.15s ease'
-                                  }}
-                                >
-                                  {isCheckbox ? (
-                                    <div style={{
-                                      width: '18px',
-                                      height: '18px',
-                                      borderRadius: '5px',
-                                      border: isChecked ? '2px solid #FFD60A' : '2px solid rgba(255,255,255,0.4)',
-                                      background: isChecked ? '#FFD60A' : 'transparent',
+                                    }}
+                                    style={{
                                       display: 'flex',
                                       alignItems: 'center',
-                                      justifyContent: 'center',
-                                      color: '#000000',
-                                      fontWeight: 900,
-                                      fontSize: '0.75rem',
-                                      flexShrink: 0
-                                    }}>
-                                      {isChecked ? '✓' : ''}
-                                    </div>
-                                  ) : (
-                                    <span style={{ color: '#FFD60A', fontWeight: 900 }}>•</span>
-                                  )}
+                                      gap: '0.75rem',
+                                      padding: isHeading ? '0.75rem 0.5rem 0.25rem 0.5rem' : '0.6rem 0.85rem',
+                                      borderRadius: '10px',
+                                      background: isHeading ? 'transparent' : isChecked ? 'rgba(255,255,255,0.04)' : 'rgba(255,255,255,0.08)',
+                                      border: isHeading ? 'none' : isChecked ? '1px solid rgba(255,255,255,0.08)' : '1px solid rgba(255,255,255,0.15)',
+                                      cursor: isCheckbox ? 'pointer' : 'default',
+                                      transition: 'all 0.15s ease'
+                                    }}
+                                  >
+                                    {isCheckbox ? (
+                                      <div style={{
+                                        width: '18px',
+                                        height: '18px',
+                                        borderRadius: '5px',
+                                        border: isChecked ? '2px solid #FFD60A' : '2px solid rgba(255,255,255,0.4)',
+                                        background: isChecked ? '#FFD60A' : 'transparent',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        color: '#000000',
+                                        fontWeight: 900,
+                                        fontSize: '0.75rem',
+                                        flexShrink: 0
+                                      }}>
+                                        {isChecked ? '✓' : ''}
+                                      </div>
+                                    ) : isHeading ? null : (
+                                      <span style={{ color: '#FFD60A', fontWeight: 900 }}>•</span>
+                                    )}
 
-                                  <span style={{
-                                    fontSize: '0.92rem',
-                                    color: isChecked ? 'rgba(255,255,255,0.4)' : '#ffffff',
-                                    textDecoration: isChecked ? 'line-through' : 'none'
-                                  }}>
-                                    {cleanText}
-                                  </span>
-                                </div>
-                              );
-                            })}
+                                    <span style={{
+                                      fontSize: isHeading ? '1.15rem' : '0.92rem',
+                                      fontWeight: isHeading ? 700 : 400,
+                                      color: isHeading ? '#FFD60A' : isChecked ? 'rgba(255,255,255,0.4)' : '#ffffff',
+                                      textDecoration: isChecked ? 'line-through' : 'none'
+                                    }}>
+                                      {cleanText}
+                                    </span>
+                                  </div>
+                                );
+                              })
+                            )}
                           </div>
                         )}
 
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '0.75rem', marginTop: '0.75rem', fontSize: '0.75rem', color: 'rgba(255,255,255,0.5)' }}>
                           <span>
-                            {personalNotes.split('\n').filter(l => l.trim().length > 0).length} items • Auto-Saved to Apple Notes Pad
+                            {personalNotes.split('\n').filter(l => l.trim().length > 0).length} items • Private Note
                           </span>
                           <button
                             onClick={() => {
-                              if (confirm("Clear this Apple Note?")) {
-                                handleSaveNoteContent('[ ] ');
+                              if (confirm("Are you sure you want to clear your personal notes?")) {
+                                handleSaveNoteContent('');
                               }
                             }}
                             style={{ background: 'none', border: 'none', color: '#ff6b6b', cursor: 'pointer', fontSize: '0.75rem' }}
