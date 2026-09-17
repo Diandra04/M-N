@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { 
   Lock, Plus, Trash2, Key, ShieldCheck, CheckCircle2, FileSignature, 
-  Users, Calendar as CalendarIcon, DollarSign, Calculator, Folder, Upload, Download, FileText, Check, Heart, Eye, Save, Sparkles
+  Users, Calendar as CalendarIcon, DollarSign, Calculator, Folder, Upload, Download, FileText, Check, Heart, Eye, Save, Sparkles, Clock, MapPin, Send, XCircle
 } from 'lucide-react';
 
 export function SecretVault({ 
@@ -15,6 +15,9 @@ export function SecretVault({
   nikitaSecretNotes = [],
   manziVows = '',
   nikitaVows = '',
+  meetingRequests = [],
+  onCreateMeetingRequest,
+  onRespondMeetingRequest,
   onSaveVows,
   onAddTodo,
   onToggleTodo,
@@ -24,7 +27,7 @@ export function SecretVault({
   onDeleteSecretNote,
   onOpenLoginModal
 }) {
-  const [activeTab, setActiveTab] = useState('VOWS'); // 'VOWS' | 'GUESTS' | 'BUDGET' | 'DOCUMENTS' | 'SHARED'
+  const [activeTab, setActiveTab] = useState('VOWS'); // 'VOWS' | 'MEETINGS' | 'GUESTS' | 'BUDGET' | 'DOCUMENTS' | 'SHARED'
   const [dateFilter, setDateFilter] = useState('ALL');
 
   const handleTabSelect = (tabKey) => {
@@ -74,6 +77,34 @@ export function SecretVault({
   const [newDocNotes, setNewDocNotes] = useState('');
   const [newDocFileName, setNewDocFileName] = useState('');
 
+  // Meeting / Date Request Form State
+  const [meetTitle, setMeetTitle] = useState('');
+  const [meetDate, setMeetDate] = useState('2026-10-14');
+  const [meetTime, setMeetTime] = useState('07:00 PM');
+  const [meetLocation, setMeetLocation] = useState('King Street West Airbnb');
+  const [meetNotes, setMeetNotes] = useState('');
+
+  const handleCreateMeetingSubmit = (e) => {
+    e.preventDefault();
+    if (!meetTitle || !onCreateMeetingRequest) return;
+    const req = {
+      id: 'meet-' + Date.now(),
+      from: currentUser !== 'GUEST' ? currentUser : 'MANZI',
+      to: currentUser === 'MANZI' ? 'NIKITA' : 'MANZI',
+      title: meetTitle,
+      date: meetDate,
+      dayLabel: meetDate === '2026-10-14' ? 'Wednesday, Oct 14' : meetDate === '2026-10-15' ? 'Thursday, Oct 15' : meetDate === '2026-10-16' ? 'Friday, Oct 16' : meetDate,
+      time: meetTime,
+      location: meetLocation,
+      notes: meetNotes || `Meeting invitation from ${currentUser}.`,
+      status: 'PENDING',
+      createdAt: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    };
+    onCreateMeetingRequest(req);
+    setMeetTitle('');
+    setMeetNotes('');
+  };
+
   // Add Todo & Note Form State
   const [newTask, setNewTask] = useState('');
   const [newDate, setNewDate] = useState('2026-10-15');
@@ -84,7 +115,6 @@ export function SecretVault({
   const [calendarViewMode, setCalendarViewMode] = useState('OCTOBER');
 
   // Personal Notes Workspace State
-  const [taskSubTab, setTaskSubTab] = useState('SHARED'); // 'SHARED' | 'NOTES'
   const [notesViewMode, setNotesViewMode] = useState('EDITOR'); // 'EDITOR' | 'CHECKLIST'
 
   const getNoteStorageKey = (user) => `mn_personal_notes_${user || 'GUEST'}_v4`;
@@ -962,6 +992,56 @@ export function SecretVault({
                 {sharedTodos.filter(t => t.completed).length} / {sharedTodos.length} Tasks Complete →
               </div>
             </div>
+
+            {/* Card 6: Date & Meeting Invites (Emerald / Rose) */}
+            <div 
+              onClick={() => setActiveTab('MEETINGS')}
+              style={{
+                background: activeTab === 'MEETINGS' 
+                  ? 'linear-gradient(135deg, #1C2E26 0%, #2A483B 100%)' 
+                  : 'linear-gradient(135deg, #131E19 0%, #0E1612 100%)',
+                color: '#ffffff',
+                border: activeTab === 'MEETINGS' ? '2px solid #81C784' : '1px solid rgba(129, 199, 132, 0.35)',
+                borderRadius: '18px',
+                padding: '1.25rem',
+                cursor: 'pointer',
+                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                boxShadow: activeTab === 'MEETINGS' ? '0 10px 28px rgba(129, 199, 132, 0.3)' : '0 4px 12px rgba(0,0,0,0.2)',
+                transform: activeTab === 'MEETINGS' ? 'translateY(-3px)' : 'none',
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'space-between',
+                minHeight: '135px'
+              }}
+            >
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <CalendarIcon size={22} style={{ color: '#81C784' }} />
+                  <span style={{
+                    fontSize: '0.65rem',
+                    fontWeight: 800,
+                    padding: '0.2rem 0.6rem',
+                    borderRadius: '12px',
+                    background: '#2E7D32',
+                    color: '#ffffff',
+                    letterSpacing: '0.05em',
+                    textTransform: 'uppercase'
+                  }}>
+                    MEETINGS
+                  </span>
+                </div>
+                <h3 style={{ fontSize: '1.15rem', fontWeight: 700, margin: '0.65rem 0 0.2rem 0', fontFamily: 'var(--font-serif)', fontStyle: 'normal', color: '#ffffff' }}>
+                  Date &amp; Meeting Invites
+                </h3>
+                <p style={{ fontSize: '0.78rem', margin: 0, color: 'rgba(255, 255, 255, 0.75)' }}>
+                  Schedule &amp; respond to partner dates
+                </p>
+              </div>
+
+              <div style={{ fontSize: '0.75rem', fontWeight: 700, marginTop: '0.85rem', borderTop: '1px solid rgba(129, 199, 132, 0.25)', paddingTop: '0.5rem', color: '#C8E6C9' }}>
+                {meetingRequests.filter(m => m.status === 'PENDING').length} Pending Invites →
+              </div>
+            </div>
           </div>
 
           {/* ACTIVE TOOL FEATURE VIEW */}
@@ -1598,420 +1678,351 @@ export function SecretVault({
               </div>
             )}
 
-            {/* FEATURE VIEW 5: SHARED COUPLE TASKS & PERSONAL NOTES (APPLE NOTES STYLE) */}
+            {/* FEATURE VIEW 5: SHARED COUPLE TASKS */}
             {activeTab === 'SHARED' && (
               <div>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem', borderBottom: '1px solid rgba(255,255,255,0.12)', paddingBottom: '1rem', flexWrap: 'wrap', gap: '0.75rem' }}>
                   <div>
                     <h3 style={{ fontSize: '1.6rem', fontFamily: 'var(--font-serif)', fontStyle: 'normal', fontWeight: 600, color: '#ffffff', margin: 0 }}>
-                      Checklists & Personal Task Notes
+                      Couple Tasks & Checklists
                     </h3>
                     <p style={{ fontSize: '0.82rem', color: 'rgba(255,255,255,0.6)', margin: '0.2rem 0 0 0' }}>
-                      Switch between shared dual-signed couple tasks and your personal Apple Notes-style task pad.
+                      Shared dual-signed couple tasks for Manzi & Nikita.
                     </p>
-                  </div>
-
-                  {/* Sub-Tab Navigation Toggle */}
-                  <div style={{ display: 'flex', gap: '0.4rem', background: '#18181c', padding: '0.25rem', borderRadius: '25px', border: '1px solid rgba(255,255,255,0.15)' }}>
-                    <button
-                      onClick={() => setTaskSubTab('SHARED')}
-                      style={{
-                        padding: '0.45rem 1.1rem',
-                        borderRadius: '20px',
-                        fontSize: '0.8rem',
-                        fontWeight: 700,
-                        border: 'none',
-                        cursor: 'pointer',
-                        background: taskSubTab === 'SHARED' ? '#ffffff' : 'transparent',
-                        color: taskSubTab === 'SHARED' ? '#000000' : '#ffffff',
-                        transition: 'all 0.2s'
-                      }}
-                    >
-                      Shared Couple Tasks ({filteredSharedTodos.length})
-                    </button>
-
-                    <button
-                      onClick={() => setTaskSubTab('NOTES')}
-                      style={{
-                        padding: '0.45rem 1.1rem',
-                        borderRadius: '20px',
-                        fontSize: '0.8rem',
-                        fontWeight: 700,
-                        border: 'none',
-                        cursor: 'pointer',
-                        background: taskSubTab === 'NOTES' ? '#FFD60A' : 'transparent',
-                        color: taskSubTab === 'NOTES' ? '#000000' : '#ffffff',
-                        transition: 'all 0.2s'
-                      }}
-                    >
-                      Personal Notes Pad
-                    </button>
                   </div>
                 </div>
 
-                {/* SUB-VIEW A: SHARED COUPLE TASKS */}
-                {taskSubTab === 'SHARED' && (
-                  <div>
-                    {filteredSharedTodos.length === 0 ? (
-                      <div style={{ padding: '2rem', textAlign: 'center', color: 'rgba(255,255,255,0.5)' }}>
-                        No shared tasks recorded for this date.
-                      </div>
-                    ) : (
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
-                        {filteredSharedTodos.map((todo) => (
-                          <div
-                            key={todo.id}
-                            style={{
-                              background: '#18181c',
-                              border: '1px solid rgba(255, 255, 255, 0.15)',
-                              borderRadius: '14px',
-                              padding: '1rem 1.25rem',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'space-between',
-                              gap: '1rem',
-                              flexWrap: 'wrap'
-                            }}
-                          >
-                            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.85rem', flex: 1 }}>
-                              <button
-                                onClick={() => onToggleTodo(todo.id, 'SHARED')}
-                                className={`custom-checkbox ${todo.completed ? 'checked' : ''}`}
-                                style={{ marginTop: '0.2rem', flexShrink: 0 }}
-                              >
-                                {todo.completed && <CheckCircle2 size={15} />}
-                              </button>
+                <div>
+                  {filteredSharedTodos.length === 0 ? (
+                    <div style={{ padding: '2rem', textAlign: 'center', color: 'rgba(255,255,255,0.5)' }}>
+                      No shared tasks recorded for this date.
+                    </div>
+                  ) : (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
+                      {filteredSharedTodos.map((todo) => (
+                        <div
+                          key={todo.id}
+                          style={{
+                            background: '#18181c',
+                            border: '1px solid rgba(255, 255, 255, 0.15)',
+                            borderRadius: '14px',
+                            padding: '1rem 1.25rem',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            gap: '1rem',
+                            flexWrap: 'wrap'
+                          }}
+                        >
+                          <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.85rem', flex: 1 }}>
+                            <button
+                              onClick={() => onToggleTodo(todo.id, 'SHARED')}
+                              className={`custom-checkbox ${todo.completed ? 'checked' : ''}`}
+                              style={{ marginTop: '0.2rem', flexShrink: 0 }}
+                            >
+                              {todo.completed && <CheckCircle2 size={15} />}
+                            </button>
 
-                              <div>
-                                <div style={{ fontSize: '0.98rem', fontWeight: 600, color: todo.completed ? 'rgba(255,255,255,0.4)' : '#ffffff', textDecoration: todo.completed ? 'line-through' : 'none' }}>
-                                  {todo.task}
-                                </div>
+                            <div>
+                              <div style={{ fontSize: '0.98rem', fontWeight: 600, color: todo.completed ? 'rgba(255,255,255,0.4)' : '#ffffff', textDecoration: todo.completed ? 'line-through' : 'none' }}>
+                                {todo.task}
+                              </div>
 
-                                <div style={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.6)', marginTop: '0.25rem', display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-                                  <span>{todo.dayLabel}</span>
-                                  <span>•</span>
-                                  <span style={{ padding: '0.1rem 0.5rem', fontSize: '0.65rem', borderRadius: '12px', background: 'rgba(255,255,255,0.1)', color: '#ffffff', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                                    {todo.category}
-                                  </span>
-                                </div>
+                              <div style={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.6)', marginTop: '0.25rem', display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                                <span>{todo.dayLabel}</span>
+                                <span>•</span>
+                                <span style={{ padding: '0.1rem 0.5rem', fontSize: '0.65rem', borderRadius: '12px', background: 'rgba(255,255,255,0.1)', color: '#ffffff', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                                  {todo.category}
+                                </span>
+                              </div>
 
-                                <div style={{ marginTop: '0.5rem', display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-                                  <span style={{
-                                    fontSize: '0.75rem',
-                                    padding: '0.2rem 0.6rem',
-                                    borderRadius: '6px',
-                                    background: todo.signedByManzi ? '#2d2d32' : 'rgba(255,255,255,0.08)',
-                                    color: '#ffffff',
-                                    border: todo.signedByManzi ? '1px solid rgba(255,255,255,0.3)' : '1px solid rgba(255,255,255,0.15)',
-                                    fontWeight: 700
-                                  }}>
-                                    Manzi: {todo.signedByManzi ? '[Signed]' : 'Pending'}
-                                  </span>
+                              <div style={{ marginTop: '0.5rem', display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                                <span style={{
+                                  fontSize: '0.75rem',
+                                  padding: '0.2rem 0.6rem',
+                                  borderRadius: '6px',
+                                  background: todo.signedByManzi ? '#2d2d32' : 'rgba(255,255,255,0.08)',
+                                  color: '#ffffff',
+                                  border: todo.signedByManzi ? '1px solid rgba(255,255,255,0.3)' : '1px solid rgba(255,255,255,0.15)',
+                                  fontWeight: 700
+                                }}>
+                                  Manzi: {todo.signedByManzi ? '[Signed]' : 'Pending'}
+                                </span>
 
-                                  <span style={{
-                                    fontSize: '0.75rem',
-                                    padding: '0.2rem 0.6rem',
-                                    borderRadius: '6px',
-                                    background: todo.signedByNikita ? '#38383e' : 'rgba(255,255,255,0.08)',
-                                    color: '#ffffff',
-                                    border: todo.signedByNikita ? '1px solid rgba(255,255,255,0.3)' : '1px solid rgba(255,255,255,0.15)',
-                                    fontWeight: 700
-                                  }}>
-                                    Nikita: {todo.signedByNikita ? '[Signed]' : 'Pending'}
-                                  </span>
-                                </div>
+                                <span style={{
+                                  fontSize: '0.75rem',
+                                  padding: '0.2rem 0.6rem',
+                                  borderRadius: '6px',
+                                  background: todo.signedByNikita ? '#38383e' : 'rgba(255,255,255,0.08)',
+                                  color: '#ffffff',
+                                  border: todo.signedByNikita ? '1px solid rgba(255,255,255,0.3)' : '1px solid rgba(255,255,255,0.15)',
+                                  fontWeight: 700
+                                }}>
+                                  Nikita: {todo.signedByNikita ? '[Signed]' : 'Pending'}
+                                </span>
                               </div>
                             </div>
+                          </div>
 
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }} className="no-print">
-                              {currentUser === 'MANZI' && !todo.signedByManzi && (
-                                <button
-                                  onClick={() => onSignTodo(todo.id, 'MANZI')}
-                                  className="btn-sm"
-                                  style={{ fontSize: '0.75rem', padding: '0.35rem 0.85rem', background: '#ffffff', color: '#000000', border: 'none', borderRadius: '20px', fontWeight: 700 }}
-                                >
-                                  <FileSignature size={13} /> Sign as Manzi
-                                </button>
-                              )}
-
-                              {currentUser === 'NIKITA' && !todo.signedByNikita && (
-                                <button
-                                  onClick={() => onSignTodo(todo.id, 'NIKITA')}
-                                  className="btn-sm"
-                                  style={{ fontSize: '0.75rem', padding: '0.35rem 0.85rem', background: '#ffffff', color: '#000000', border: 'none', borderRadius: '20px', fontWeight: 700 }}
-                                >
-                                  <FileSignature size={13} /> Sign as Nikita
-                                </button>
-                              )}
-
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }} className="no-print">
+                            {currentUser === 'MANZI' && !todo.signedByManzi && (
                               <button
-                                onClick={() => onDeleteTodo(todo.id, 'SHARED')}
-                                className="btn-outline btn-sm"
-                                style={{ padding: '0.25rem 0.5rem', color: '#ff6b6b', borderColor: 'rgba(255,107,107,0.3)' }}
-                                title="Delete task"
+                                onClick={() => onSignTodo(todo.id, 'MANZI')}
+                                className="btn-sm"
+                                style={{ fontSize: '0.75rem', padding: '0.35rem 0.85rem', background: '#ffffff', color: '#000000', border: 'none', borderRadius: '20px', fontWeight: 700 }}
                               >
-                                <Trash2 size={13} />
+                                <FileSignature size={13} /> Sign as Manzi
                               </button>
-                            </div>
-
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {/* SUB-VIEW B: USER PERSONAL NOTES PAD */}
-                {taskSubTab === 'NOTES' && (
-                  <div style={{ maxWidth: '850px', margin: '0 auto' }}>
-                    
-                    <div style={{
-                      background: '#1c1c1e',
-                      border: '1px solid rgba(255, 214, 10, 0.35)',
-                      borderRadius: '18px',
-                      overflow: 'hidden',
-                      boxShadow: '0 20px 40px rgba(0,0,0,0.6)'
-                    }}>
-                      {/* Top Window Header Bar */}
-                      <div style={{
-                        background: '#2c2c2e',
-                        padding: '0.75rem 1.25rem',
-                        borderBottom: '1px solid rgba(255,255,255,0.12)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        flexWrap: 'wrap',
-                        gap: '0.75rem'
-                      }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-                          <span style={{ width: '12px', height: '12px', borderRadius: '50%', background: '#FF5F56', display: 'inline-block' }} />
-                          <span style={{ width: '12px', height: '12px', borderRadius: '50%', background: '#FFBD2E', display: 'inline-block' }} />
-                          <span style={{ width: '12px', height: '12px', borderRadius: '50%', background: '#27C93F', display: 'inline-block' }} />
-                          <span style={{ fontSize: '0.9rem', fontWeight: 700, color: '#FFD60A', marginLeft: '0.5rem', letterSpacing: '0.04em' }}>
-                            {isManzi ? "Manzi's Private Notes" : isNikita ? "Nikita's Private Notes" : "Personal Notes Pad"}
-                          </span>
-                        </div>
-
-                        {/* Formatting Toolbar Controls */}
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'wrap' }}>
-                          <button
-                            onClick={() => {
-                              const item = '\n[ ] ';
-                              handleSaveNoteContent(personalNotes ? `${personalNotes}${item}` : '[ ] ');
-                            }}
-                            style={{
-                              background: 'rgba(255, 214, 10, 0.15)',
-                              color: '#FFD60A',
-                              border: '1px solid rgba(255, 214, 10, 0.3)',
-                              borderRadius: '8px',
-                              padding: '0.25rem 0.6rem',
-                              fontSize: '0.72rem',
-                              fontWeight: 700,
-                              cursor: 'pointer'
-                            }}
-                          >
-                            + Checkbox
-                          </button>
-                          <button
-                            onClick={() => {
-                              const bullet = '\n• ';
-                              handleSaveNoteContent(personalNotes ? `${personalNotes}${bullet}` : '• ');
-                            }}
-                            style={{
-                              background: 'rgba(255, 255, 255, 0.1)',
-                              color: '#ffffff',
-                              border: '1px solid rgba(255, 255, 255, 0.2)',
-                              borderRadius: '8px',
-                              padding: '0.25rem 0.6rem',
-                              fontSize: '0.72rem',
-                              fontWeight: 700,
-                              cursor: 'pointer'
-                            }}
-                          >
-                            + Bullet
-                          </button>
-                          <button
-                            onClick={() => {
-                              const heading = '\n# ';
-                              handleSaveNoteContent(personalNotes ? `${personalNotes}${heading}` : '# ');
-                            }}
-                            style={{
-                              background: 'rgba(255, 255, 255, 0.1)',
-                              color: '#ffffff',
-                              border: '1px solid rgba(255, 255, 255, 0.2)',
-                              borderRadius: '8px',
-                              padding: '0.25rem 0.6rem',
-                              fontSize: '0.72rem',
-                              fontWeight: 700,
-                              cursor: 'pointer'
-                            }}
-                          >
-                            + Heading
-                          </button>
-                          
-                          {/* Mode Switcher: Editor vs Interactive Checklist */}
-                          <div style={{
-                            display: 'inline-flex',
-                            background: '#121214',
-                            borderRadius: '8px',
-                            padding: '0.15rem',
-                            border: '1px solid rgba(255,255,255,0.15)'
-                          }}>
-                            <button
-                              onClick={() => setNotesViewMode('EDITOR')}
-                              style={{
-                                padding: '0.2rem 0.55rem',
-                                fontSize: '0.7rem',
-                                fontWeight: 600,
-                                borderRadius: '6px',
-                                border: 'none',
-                                background: notesViewMode === 'EDITOR' ? '#FFD60A' : 'transparent',
-                                color: notesViewMode === 'EDITOR' ? '#000000' : 'rgba(255,255,255,0.7)',
-                                cursor: 'pointer'
-                              }}
-                            >
-                              Editor
-                            </button>
-                            <button
-                              onClick={() => setNotesViewMode('CHECKLIST')}
-                              style={{
-                                padding: '0.2rem 0.55rem',
-                                fontSize: '0.7rem',
-                                fontWeight: 600,
-                                borderRadius: '6px',
-                                border: 'none',
-                                background: notesViewMode === 'CHECKLIST' ? '#FFD60A' : 'transparent',
-                                color: notesViewMode === 'CHECKLIST' ? '#000000' : 'rgba(255,255,255,0.7)',
-                                cursor: 'pointer'
-                              }}
-                            >
-                              Checklist
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Notes Body Area */}
-                      <div style={{ padding: '1.25rem' }}>
-                        <div style={{ textAlign: 'center', fontSize: '0.72rem', color: 'rgba(255,255,255,0.45)', marginBottom: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-                          Auto-Saved • Today at {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                        </div>
-
-                        {notesViewMode === 'EDITOR' ? (
-                          <textarea
-                            value={personalNotes}
-                            onChange={(e) => handleSaveNoteContent(e.target.value)}
-                            onKeyDown={handleNotesKeyDown}
-                            placeholder="Type your personal notes, paragraphs, bullets, or checklists here..."
-                            rows={12}
-                            style={{
-                              width: '100%',
-                              boxSizing: 'border-box',
-                              background: 'transparent',
-                              border: 'none',
-                              outline: 'none',
-                              color: '#ffffff',
-                              fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-                              fontSize: '1rem',
-                              lineHeight: 1.75,
-                              resize: 'vertical'
-                            }}
-                          />
-                        ) : (
-                          /* Interactive Checklist Mode */
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem', minHeight: '220px' }}>
-                            {personalNotes.trim().length === 0 ? (
-                              <div style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.9rem', fontStyle: 'italic', padding: '1rem 0', textAlign: 'center' }}>
-                                Your note pad is currently empty. Switch to Editor mode to write your notes or add tasks!
-                              </div>
-                            ) : (
-                              personalNotes.split('\n').filter(l => l.trim().length > 0).map((line, idx) => {
-                                const isChecked = line.trim().startsWith('[x]') || line.trim().startsWith('[X]');
-                                const isCheckbox = line.trim().startsWith('[ ]') || isChecked;
-                                const isHeading = line.trim().startsWith('#');
-                                const cleanText = line.replace(/^(\[ \]|\[x\]|\[X\]|•|-|\*|#+)\s*/, '');
-
-                                return (
-                                  <div
-                                    key={idx}
-                                    onClick={() => {
-                                      if (isCheckbox) {
-                                        const lines = personalNotes.split('\n');
-                                        if (isChecked) {
-                                          lines[idx] = lines[idx].replace(/^\[x\]|\[X\]/, '[ ]');
-                                        } else {
-                                          lines[idx] = lines[idx].replace(/^\[ \]/, '[x]');
-                                        }
-                                        handleSaveNoteContent(lines.join('\n'));
-                                      }
-                                    }}
-                                    style={{
-                                      display: 'flex',
-                                      alignItems: 'center',
-                                      gap: '0.75rem',
-                                      padding: isHeading ? '0.75rem 0.5rem 0.25rem 0.5rem' : '0.6rem 0.85rem',
-                                      borderRadius: '10px',
-                                      background: isHeading ? 'transparent' : isChecked ? 'rgba(255,255,255,0.04)' : 'rgba(255,255,255,0.08)',
-                                      border: isHeading ? 'none' : isChecked ? '1px solid rgba(255,255,255,0.08)' : '1px solid rgba(255,255,255,0.15)',
-                                      cursor: isCheckbox ? 'pointer' : 'default',
-                                      transition: 'all 0.15s ease'
-                                    }}
-                                  >
-                                    {isCheckbox ? (
-                                      <div style={{
-                                        width: '18px',
-                                        height: '18px',
-                                        borderRadius: '5px',
-                                        border: isChecked ? '2px solid #FFD60A' : '2px solid rgba(255,255,255,0.4)',
-                                        background: isChecked ? '#FFD60A' : 'transparent',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                        color: '#000000',
-                                        fontWeight: 900,
-                                        fontSize: '0.75rem',
-                                        flexShrink: 0
-                                      }}>
-                                        {isChecked ? '✓' : ''}
-                                      </div>
-                                    ) : isHeading ? null : (
-                                      <span style={{ color: '#FFD60A', fontWeight: 900 }}>•</span>
-                                    )}
-
-                                    <span style={{
-                                      fontSize: isHeading ? '1.15rem' : '0.92rem',
-                                      fontWeight: isHeading ? 700 : 400,
-                                      color: isHeading ? '#FFD60A' : isChecked ? 'rgba(255,255,255,0.4)' : '#ffffff',
-                                      textDecoration: isChecked ? 'line-through' : 'none'
-                                    }}>
-                                      {cleanText}
-                                    </span>
-                                  </div>
-                                );
-                              })
                             )}
-                          </div>
-                        )}
 
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '0.75rem', marginTop: '0.75rem', fontSize: '0.75rem', color: 'rgba(255,255,255,0.5)' }}>
-                          <span>
-                            {personalNotes.split('\n').filter(l => l.trim().length > 0).length} items • Private Note
-                          </span>
-                          <button
-                            onClick={() => {
-                              if (confirm("Are you sure you want to clear your personal notes?")) {
-                                handleSaveNoteContent('');
-                              }
-                            }}
-                            style={{ background: 'none', border: 'none', color: '#ff6b6b', cursor: 'pointer', fontSize: '0.75rem' }}
-                          >
-                            Clear Note
-                          </button>
+                            {currentUser === 'NIKITA' && !todo.signedByNikita && (
+                              <button
+                                onClick={() => onSignTodo(todo.id, 'NIKITA')}
+                                className="btn-sm"
+                                style={{ fontSize: '0.75rem', padding: '0.35rem 0.85rem', background: '#ffffff', color: '#000000', border: 'none', borderRadius: '20px', fontWeight: 700 }}
+                              >
+                                <FileSignature size={13} /> Sign as Nikita
+                              </button>
+                            )}
+
+                            <button
+                              onClick={() => onDeleteTodo(todo.id, 'SHARED')}
+                              className="btn-outline btn-sm"
+                              style={{ padding: '0.25rem 0.5rem', color: '#ff6b6b', borderColor: 'rgba(255,107,107,0.3)' }}
+                              title="Delete task"
+                            >
+                              <Trash2 size={13} />
+                            </button>
+                          </div>
+
                         </div>
-                      </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* FEATURE VIEW 6: DATE & MEETING INVITATIONS */}
+            {activeTab === 'MEETINGS' && (
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem', borderBottom: '1px solid rgba(255,255,255,0.12)', paddingBottom: '1rem', flexWrap: 'wrap', gap: '0.75rem' }}>
+                  <div>
+                    <h3 style={{ fontSize: '1.6rem', fontFamily: 'var(--font-serif)', fontStyle: 'normal', fontWeight: 600, color: '#ffffff', margin: 0 }}>
+                      Date &amp; Meeting Invitations
+                    </h3>
+                    <p style={{ fontSize: '0.82rem', color: 'rgba(255,255,255,0.6)', margin: '0.2rem 0 0 0' }}>
+                      Schedule dates and planning meetings with your partner. Accepting automatically adds the date to your timeline!
+                    </p>
+                  </div>
+                </div>
+
+                {/* Info Guide Card explaining cross-account features */}
+                <div style={{
+                  background: '#18181c',
+                  border: '1px solid rgba(255, 255, 255, 0.15)',
+                  borderRadius: '14px',
+                  padding: '1.25rem',
+                  marginBottom: '1.75rem',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '0.5rem'
+                }}>
+                  <h4 style={{ fontSize: '0.95rem', fontWeight: 700, color: '#ffffff', margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <Sparkles size={16} style={{ color: '#ffffff' }} /> How Shared Tasks &amp; Meeting Invites Work Across Accounts
+                  </h4>
+                  <p style={{ fontSize: '0.82rem', color: 'rgba(255, 255, 255, 0.75)', margin: 0, lineHeight: 1.5 }}>
+                    1. <strong>Shared Couple Tasks:</strong> When logged in as Manzi or Nikita, any task added under Shared Couple Tasks is visible to both. You can both sign off on tasks to confirm agreement.<br />
+                    2. <strong>Meeting &amp; Date Requests:</strong> Schedule a date, dinner, or meeting below. Your partner will see the invite on their account and can click <strong>Accept Date</strong> (which places it directly onto your timeline calendar!), <strong>Postpone / New Time</strong>, or <strong>Decline</strong>.
+                  </p>
+                </div>
+
+                {/* Form: Propose / Schedule New Date or Meeting */}
+                <form onSubmit={handleCreateMeetingSubmit} style={{ background: '#18181c', padding: '1.25rem', borderRadius: '14px', border: '1px solid rgba(255,255,255,0.15)', marginBottom: '1.75rem' }}>
+                  <h4 style={{ fontSize: '0.92rem', fontWeight: 700, color: '#ffffff', textTransform: 'uppercase', marginBottom: '0.85rem' }}>
+                    + Schedule a Date or Meeting with {currentUser === 'MANZI' ? 'Nikita' : currentUser === 'NIKITA' ? 'Manzi' : 'Partner'}
+                  </h4>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '0.75rem' }}>
+                    <div>
+                      <label className="form-label" style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.7)' }}>Meeting / Date Title</label>
+                      <input
+                        type="text"
+                        value={meetTitle}
+                        onChange={(e) => setMeetTitle(e.target.value)}
+                        placeholder="e.g. Dinner Date at Canoe..."
+                        className="form-input"
+                        style={{ padding: '0.5rem 0.8rem', fontSize: '0.85rem', background: '#121214', color: '#ffffff', borderColor: 'rgba(255,255,255,0.2)' }}
+                        required
+                      />
+                    </div>
+
+                    <div>
+                      <label className="form-label" style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.7)' }}>Date</label>
+                      <select
+                        value={meetDate}
+                        onChange={(e) => setMeetDate(e.target.value)}
+                        className="form-select"
+                        style={{ padding: '0.5rem 0.8rem', fontSize: '0.85rem', background: '#121214', color: '#ffffff', borderColor: 'rgba(255,255,255,0.2)' }}
+                      >
+                        <option value="2026-10-14">Wed Oct 14 - Arrival &amp; Check-in</option>
+                        <option value="2026-10-15">Thu Oct 15 - Civil Marriage Day</option>
+                        <option value="2026-10-16">Fri Oct 16 - Post-Wedding Dinner</option>
+                        <option value="2026-10-17">Sat Oct 17 - Roadtrip Departure</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="form-label" style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.7)' }}>Time</label>
+                      <input
+                        type="text"
+                        value={meetTime}
+                        onChange={(e) => setMeetTime(e.target.value)}
+                        placeholder="e.g. 07:00 PM"
+                        className="form-input"
+                        style={{ padding: '0.5rem 0.8rem', fontSize: '0.85rem', background: '#121214', color: '#ffffff', borderColor: 'rgba(255,255,255,0.2)' }}
+                      />
+                    </div>
+
+                    <div>
+                      <label className="form-label" style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.7)' }}>Location</label>
+                      <input
+                        type="text"
+                        value={meetLocation}
+                        onChange={(e) => setMeetLocation(e.target.value)}
+                        placeholder="e.g. King St Airbnb / Canoe Restaurant"
+                        className="form-input"
+                        style={{ padding: '0.5rem 0.8rem', fontSize: '0.85rem', background: '#121214', color: '#ffffff', borderColor: 'rgba(255,255,255,0.2)' }}
+                      />
                     </div>
                   </div>
-                )}
+
+                  <div style={{ marginTop: '0.75rem' }}>
+                    <label className="form-label" style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.7)' }}>Notes &amp; Details</label>
+                    <textarea
+                      value={meetNotes}
+                      onChange={(e) => setMeetNotes(e.target.value)}
+                      placeholder="Add any specific details or notes for your partner..."
+                      rows={2}
+                      className="form-input"
+                      style={{ padding: '0.5rem 0.8rem', fontSize: '0.85rem', background: '#121214', color: '#ffffff', borderColor: 'rgba(255,255,255,0.2)', width: '100%', resize: 'vertical' }}
+                    />
+                  </div>
+
+                  <div style={{ marginTop: '1rem', textAlign: 'right' }}>
+                    <button type="submit" className="btn-primary btn-sm" style={{ background: '#ffffff', color: '#000000', border: 'none', fontWeight: 700, padding: '0.55rem 1.35rem' }}>
+                      <Send size={14} /> Send Meeting Invitation
+                    </button>
+                  </div>
+                </form>
+
+                {/* List of Invites */}
+                <div>
+                  <h4 style={{ fontSize: '1.1rem', fontWeight: 600, color: '#ffffff', marginBottom: '1rem' }}>
+                    Date &amp; Meeting Requests ({meetingRequests.length})
+                  </h4>
+
+                  {meetingRequests.length === 0 ? (
+                    <div style={{ padding: '2rem', textAlign: 'center', background: '#18181c', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '14px', color: 'rgba(255,255,255,0.5)' }}>
+                      No meeting requests scheduled yet. Create one above!
+                    </div>
+                  ) : (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                      {meetingRequests.map((req) => {
+                        const isRecipient = currentUser === req.to || currentUser === 'GUEST';
+
+                        return (
+                          <div
+                            key={req.id}
+                            style={{
+                              background: '#18181c',
+                              border: req.status === 'ACCEPTED' ? '1px solid rgba(34, 197, 94, 0.4)' : req.status === 'POSTPONED' ? '1px solid rgba(234, 179, 8, 0.4)' : '1px solid rgba(255, 255, 255, 0.18)',
+                              borderRadius: '14px',
+                              padding: '1.25rem'
+                            }}
+                          >
+                            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.75rem', marginBottom: '0.75rem' }}>
+                              <div>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.2rem' }}>
+                                  <h4 style={{ fontSize: '1.1rem', fontWeight: 600, color: '#ffffff', margin: 0 }}>
+                                    {req.title}
+                                  </h4>
+                                  <span style={{
+                                    fontSize: '0.68rem',
+                                    fontWeight: 800,
+                                    padding: '0.15rem 0.55rem',
+                                    borderRadius: '10px',
+                                    background: req.status === 'ACCEPTED' ? '#15803d' : req.status === 'POSTPONED' ? '#a16207' : req.status === 'DECLINED' ? '#b91c1c' : '#374151',
+                                    color: '#ffffff',
+                                    textTransform: 'uppercase',
+                                    letterSpacing: '0.04em'
+                                  }}>
+                                    {req.status}
+                                  </span>
+                                </div>
+
+                                <div style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.65)', display: 'flex', flexWrap: 'wrap', gap: '0.85rem', marginTop: '0.4rem' }}>
+                                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.3rem' }}>
+                                    <CalendarIcon size={13} /> {req.dayLabel || req.date}
+                                  </span>
+                                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.3rem' }}>
+                                    <Clock size={13} /> {req.time}
+                                  </span>
+                                  {req.location && (
+                                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.3rem' }}>
+                                      <MapPin size={13} /> {req.location}
+                                    </span>
+                                  )}
+                                  <span>• From: <strong>{req.from}</strong> → To: <strong>{req.to}</strong></span>
+                                </div>
+                              </div>
+
+                              {/* Action buttons for recipient */}
+                              {req.status === 'PENDING' && isRecipient && (
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+                                  <button
+                                    onClick={() => onRespondMeetingRequest(req.id, 'ACCEPTED')}
+                                    className="btn-primary btn-sm"
+                                    style={{ background: '#22c55e', color: '#ffffff', border: 'none', fontWeight: 700, padding: '0.4rem 0.9rem', fontSize: '0.78rem' }}
+                                  >
+                                    <Check size={14} /> Accept Date
+                                  </button>
+
+                                  <button
+                                    onClick={() => {
+                                      const newT = prompt('Propose new time / date:', req.time);
+                                      if (newT) {
+                                        onRespondMeetingRequest(req.id, 'POSTPONED', newT);
+                                      }
+                                    }}
+                                    className="btn-outline btn-sm"
+                                    style={{ color: '#eab308', borderColor: 'rgba(234, 179, 8, 0.4)', padding: '0.4rem 0.8rem', fontSize: '0.78rem' }}
+                                  >
+                                    <Clock size={14} /> Postpone / New Time
+                                  </button>
+
+                                  <button
+                                    onClick={() => onRespondMeetingRequest(req.id, 'DECLINED')}
+                                    className="btn-outline btn-sm"
+                                    style={{ color: '#ef4444', borderColor: 'rgba(239, 68, 68, 0.4)', padding: '0.4rem 0.8rem', fontSize: '0.78rem' }}
+                                  >
+                                    <XCircle size={14} /> Decline
+                                  </button>
+                                </div>
+                              )}
+                            </div>
+
+                            {req.notes && (
+                              <p style={{ fontSize: '0.82rem', color: 'rgba(255,255,255,0.75)', margin: '0.5rem 0 0 0', background: '#121214', padding: '0.65rem 0.85rem', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.1)' }}>
+                                {req.notes}
+                              </p>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
               </div>
             )}
 

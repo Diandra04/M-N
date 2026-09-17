@@ -226,6 +226,54 @@ export default function App() {
     }
   };
 
+  const handleCreateMeetingRequest = (requestData) => {
+    setData(prev => ({
+      ...prev,
+      meetingRequests: [requestData, ...(prev.meetingRequests || [])]
+    }));
+  };
+
+  const handleRespondMeetingRequest = (requestId, status, newTime = null) => {
+    setData(prev => {
+      const updatedRequests = (prev.meetingRequests || []).map(r => {
+        if (r.id === requestId) {
+          return {
+            ...r,
+            status,
+            ...(newTime ? { time: newTime } : {})
+          };
+        }
+        return r;
+      });
+
+      const req = (prev.meetingRequests || []).find(r => r.id === requestId);
+      let updatedEvents = prev.events || [];
+      if (req && status === 'ACCEPTED') {
+        const newEvent = {
+          id: 'evt-meet-' + Date.now(),
+          date: req.date,
+          dayLabel: req.dayLabel || req.date,
+          time: newTime || req.time,
+          title: `Date Meeting: ${req.title}`,
+          location: req.location || 'Home',
+          category: 'Prep',
+          status: 'Confirmed',
+          forWho: 'BOTH',
+          notes: req.notes || `Scheduled meeting between Manzi & Nikita.`,
+          completed: false,
+          image: '/images/backgroungImage.jpg',
+        };
+        updatedEvents = [newEvent, ...prev.events];
+      }
+
+      return {
+        ...prev,
+        meetingRequests: updatedRequests,
+        events: updatedEvents
+      };
+    });
+  };
+
   const handleResetData = () => {
     if (window.confirm('Are you sure you want to reset all itinerary details to default?')) {
       const fresh = resetStoredData();
@@ -283,6 +331,9 @@ export default function App() {
         nikitaSecretNotes={data.nikitaSecretNotes || []}
         manziVows={data.manziVows || ''}
         nikitaVows={data.nikitaVows || ''}
+        meetingRequests={data.meetingRequests || []}
+        onCreateMeetingRequest={handleCreateMeetingRequest}
+        onRespondMeetingRequest={handleRespondMeetingRequest}
         onSaveVows={handleSaveVows}
         onAddTodo={handleAddTodo}
         onToggleTodo={handleToggleTodo}

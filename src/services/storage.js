@@ -27,6 +27,7 @@ export const initialData = {
       date: 'Oct 15, 2026 @ 12:30 PM'
     }
   ],
+  meetingRequests: [],
   sharedTodos: [],
   manziSecretTodos: [],
   nikitaSecretTodos: [],
