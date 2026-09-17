@@ -1,0 +1,6 @@
+This favicon was generated using the following font:
+
+- Font Title: Fauna One
+- Font Author: undefined
+- Font Source: https://fonts.gstatic.com/s/faunaone/v16/wlpzgwTPBVpjpCuwkuEx2UxLYClOCg.ttf
+- Font License: undefined)
