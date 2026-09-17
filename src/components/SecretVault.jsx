@@ -29,6 +29,7 @@ export function SecretVault({
 }) {
   const [activeTab, setActiveTab] = useState('VOWS'); // 'VOWS' | 'MEETINGS' | 'GUESTS' | 'BUDGET' | 'DOCUMENTS' | 'SHARED'
   const [dateFilter, setDateFilter] = useState('ALL');
+  const [calendarPersonFilter, setCalendarPersonFilter] = useState('ALL'); // 'ALL' | 'NIKITA' | 'MANZI' | 'BOTH'
 
   const handleTabSelect = (tabKey) => {
     setActiveTab(tabKey);
@@ -535,34 +536,104 @@ export function SecretVault({
           </div>
         </div>
 
-        {/* Calendar Color Legend Bar */}
+        {/* Calendar Person Filter & Color Legend Bar */}
         <div style={{
           display: 'flex',
           alignItems: 'center',
-          gap: '1.25rem',
+          justifyContent: 'space-between',
+          gap: '1rem',
           flexWrap: 'wrap',
           fontSize: '0.78rem',
           fontWeight: 600,
           background: '#18181c',
-          padding: '0.5rem 0.9rem',
-          borderRadius: '10px',
+          padding: '0.6rem 1rem',
+          borderRadius: '12px',
           border: '1px solid rgba(255, 255, 255, 0.15)',
           marginBottom: '1.25rem'
         }}>
           <span style={{ color: 'rgba(255, 255, 255, 0.6)', textTransform: 'uppercase', letterSpacing: '0.06em', fontSize: '0.68rem' }}>
-            Event Color Legend:
+            Filter Monthly Calendar:
           </span>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-            <span style={{ width: '10px', height: '10px', borderRadius: '3px', background: '#e08298', display: 'inline-block' }} />
-            <span style={{ color: '#ffffff' }}>Nikita</span>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-            <span style={{ width: '10px', height: '10px', borderRadius: '3px', background: '#8B5E3C', display: 'inline-block' }} />
-            <span style={{ color: '#ffffff' }}>Manzi</span>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-            <span style={{ width: '10px', height: '10px', borderRadius: '3px', background: '#588157', display: 'inline-block' }} />
-            <span style={{ color: '#ffffff' }}>Both</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+            <button
+              onClick={() => setCalendarPersonFilter('ALL')}
+              style={{
+                padding: '0.3rem 0.75rem',
+                borderRadius: '14px',
+                fontSize: '0.75rem',
+                fontWeight: 700,
+                cursor: 'pointer',
+                background: calendarPersonFilter === 'ALL' ? '#ffffff' : 'transparent',
+                color: calendarPersonFilter === 'ALL' ? '#000000' : '#ffffff',
+                border: '1px solid rgba(255,255,255,0.3)',
+                transition: 'all 0.2s ease'
+              }}
+            >
+              All Combined
+            </button>
+
+            <button
+              onClick={() => setCalendarPersonFilter('NIKITA')}
+              style={{
+                padding: '0.3rem 0.75rem',
+                borderRadius: '14px',
+                fontSize: '0.75rem',
+                fontWeight: 700,
+                cursor: 'pointer',
+                background: calendarPersonFilter === 'NIKITA' ? '#e08298' : 'rgba(224, 130, 152, 0.15)',
+                color: '#ffffff',
+                border: '1px solid #e08298',
+                transition: 'all 0.2s ease',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '0.35rem'
+              }}
+            >
+              <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#e08298', display: 'inline-block' }} />
+              Nikita Only
+            </button>
+
+            <button
+              onClick={() => setCalendarPersonFilter('MANZI')}
+              style={{
+                padding: '0.3rem 0.75rem',
+                borderRadius: '14px',
+                fontSize: '0.75rem',
+                fontWeight: 700,
+                cursor: 'pointer',
+                background: calendarPersonFilter === 'MANZI' ? '#8B5E3C' : 'rgba(139, 94, 60, 0.15)',
+                color: '#ffffff',
+                border: '1px solid #8B5E3C',
+                transition: 'all 0.2s ease',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '0.35rem'
+              }}
+            >
+              <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#8B5E3C', display: 'inline-block' }} />
+              Manzi Only
+            </button>
+
+            <button
+              onClick={() => setCalendarPersonFilter('BOTH')}
+              style={{
+                padding: '0.3rem 0.75rem',
+                borderRadius: '14px',
+                fontSize: '0.75rem',
+                fontWeight: 700,
+                cursor: 'pointer',
+                background: calendarPersonFilter === 'BOTH' ? '#588157' : 'rgba(88, 129, 87, 0.15)',
+                color: '#ffffff',
+                border: '1px solid #588157',
+                transition: 'all 0.2s ease',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '0.35rem'
+              }}
+            >
+              <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#588157', display: 'inline-block' }} />
+              Both
+            </button>
           </div>
         </div>
 
@@ -578,7 +649,15 @@ export function SecretVault({
             for (let i = 1; i <= cfg.daysCount; i++) {
               const dayStr = i < 10 ? `0${i}` : `${i}`;
               const dateKey = `${cfg.yearMonthKey}-${dayStr}`;
-              const dayEvents = eventsByDate[dateKey] || [];
+              const rawEvents = eventsByDate[dateKey] || [];
+              const dayEvents = rawEvents.filter(evt => {
+                if (calendarPersonFilter === 'ALL') return true;
+                const theme = getEventTheme(evt);
+                if (calendarPersonFilter === 'NIKITA') return theme.label === 'Nikita';
+                if (calendarPersonFilter === 'MANZI') return theme.label === 'Manzi';
+                if (calendarPersonFilter === 'BOTH') return theme.label === 'Both';
+                return true;
+              });
               const isSelected = dateFilter === dateKey;
               const isWeddingDay = dateKey === '2026-10-15';
 

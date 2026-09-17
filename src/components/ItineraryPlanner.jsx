@@ -13,9 +13,29 @@ export function ItineraryPlanner({
   onEditEvent
 }) {
   const [flippedIds, setFlippedIds] = useState(new Set());
+  const [personFilter, setPersonFilter] = useState('ALL'); // 'ALL' | 'NIKITA' | 'MANZI' | 'BOTH'
 
-  // Group events chronologically by date
-  const groupedDateRanks = events.reduce((acc, evt) => {
+  const getEventPerson = (evt) => {
+    if (evt.forWho) return evt.forWho;
+    const title = (evt.title || '').toLowerCase();
+    const notes = (evt.notes || '').toLowerCase();
+    if (title.includes('nikita') || title.includes('nail') || title.includes('hair') || title.includes('makeup') || notes.includes('nikita')) {
+      return 'NIKITA';
+    }
+    if (title.includes('manzi') || title.includes('suit') || title.includes('barber') || title.includes('groom') || notes.includes('manzi')) {
+      return 'MANZI';
+    }
+    return 'BOTH';
+  };
+
+  // Filter events by selected person filter
+  const filteredEvents = events.filter(evt => {
+    if (personFilter === 'ALL') return true;
+    return getEventPerson(evt) === personFilter;
+  });
+
+  // Group filtered events chronologically by date
+  const groupedDateRanks = filteredEvents.reduce((acc, evt) => {
     const key = evt.date || '2026-10-15';
     if (!acc[key]) {
       acc[key] = {
@@ -99,6 +119,96 @@ export function ItineraryPlanner({
             >
               <Plus size={16} />
               <span>Add Custom Event</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Person Filter Bar */}
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: '0.85rem',
+          marginBottom: '2rem',
+          background: '#f8f8f8',
+          border: '1px solid rgba(0, 0, 0, 0.12)',
+          padding: '0.85rem 1.25rem',
+          borderRadius: '16px'
+        }} className="no-print">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <span style={{ fontSize: '0.82rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: '#555555' }}>
+              Show Events &amp; Tasks For:
+            </span>
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+            <button
+              onClick={() => setPersonFilter('ALL')}
+              style={{
+                padding: '0.45rem 1.1rem',
+                borderRadius: '20px',
+                fontSize: '0.82rem',
+                fontWeight: 700,
+                cursor: 'pointer',
+                border: personFilter === 'ALL' ? '2px solid #111111' : '1px solid rgba(0,0,0,0.15)',
+                background: personFilter === 'ALL' ? '#111111' : '#ffffff',
+                color: personFilter === 'ALL' ? '#ffffff' : '#333333',
+                transition: 'all 0.2s ease'
+              }}
+            >
+              All Combined ({events.length})
+            </button>
+
+            <button
+              onClick={() => setPersonFilter('NIKITA')}
+              style={{
+                padding: '0.45rem 1.1rem',
+                borderRadius: '20px',
+                fontSize: '0.82rem',
+                fontWeight: 700,
+                cursor: 'pointer',
+                border: personFilter === 'NIKITA' ? '2px solid #e08298' : '1px solid rgba(224, 130, 152, 0.4)',
+                background: personFilter === 'NIKITA' ? '#e08298' : '#fff5f7',
+                color: personFilter === 'NIKITA' ? '#ffffff' : '#9e3650',
+                transition: 'all 0.2s ease'
+              }}
+            >
+              Nikita Only ({events.filter(e => getEventPerson(e) === 'NIKITA').length})
+            </button>
+
+            <button
+              onClick={() => setPersonFilter('MANZI')}
+              style={{
+                padding: '0.45rem 1.1rem',
+                borderRadius: '20px',
+                fontSize: '0.82rem',
+                fontWeight: 700,
+                cursor: 'pointer',
+                border: personFilter === 'MANZI' ? '2px solid #8B5E3C' : '1px solid rgba(139, 94, 60, 0.4)',
+                background: personFilter === 'MANZI' ? '#8B5E3C' : '#faf4f0',
+                color: personFilter === 'MANZI' ? '#ffffff' : '#5c3920',
+                transition: 'all 0.2s ease'
+              }}
+            >
+              Manzi Only ({events.filter(e => getEventPerson(e) === 'MANZI').length})
+            </button>
+
+            <button
+              onClick={() => setPersonFilter('BOTH')}
+              style={{
+                padding: '0.45rem 1.1rem',
+                borderRadius: '20px',
+                fontSize: '0.82rem',
+                fontWeight: 700,
+                cursor: 'pointer',
+                border: personFilter === 'BOTH' ? '2px solid #588157' : '1px solid rgba(88, 129, 87, 0.4)',
+                background: personFilter === 'BOTH' ? '#588157' : '#f2f7f2',
+                color: personFilter === 'BOTH' ? '#ffffff' : '#2d472c',
+                transition: 'all 0.2s ease'
+              }}
+            >
+              Both ({events.filter(e => getEventPerson(e) === 'BOTH').length})
             </button>
           </div>
         </div>
@@ -190,6 +300,7 @@ export function ItineraryPlanner({
                   }}>
                     {rankGroup.events.map((evt) => {
                       const isFlipped = flippedIds.has(evt.id);
+                      const targetWho = getEventPerson(evt);
 
                       return (
                         <div key={evt.id} style={{ position: 'relative' }}>
@@ -294,36 +405,24 @@ export function ItineraryPlanner({
                                     </span>
                                   </div>
 
-                                  {/* Direct Edit Button Overlay (Front side) */}
-                                  <button
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      if (onEditEvent) onEditEvent(evt);
-                                    }}
-                                    style={{
-                                      position: 'absolute',
-                                      top: '0.85rem',
-                                      right: '0.85rem',
-                                      zIndex: 3,
-                                      background: 'rgba(0, 0, 0, 0.65)',
-                                      backdropFilter: 'blur(10px)',
-                                      WebkitBackdropFilter: 'blur(10px)',
-                                      border: '1px solid rgba(255, 255, 255, 0.3)',
-                                      color: '#ffffff',
-                                      width: '32px',
-                                      height: '32px',
-                                      borderRadius: '50%',
-                                      display: 'flex',
-                                      alignItems: 'center',
-                                      justifyContent: 'center',
-                                      cursor: 'pointer',
-                                      boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
-                                      transition: 'all 0.2s ease'
-                                    }}
-                                    title="Quick Edit Event"
-                                  >
-                                    <Edit size={14} />
-                                  </button>
+                                  {/* Person Name Badge Overlay on Front side (Pink for Nikita, Brown for Manzi, Green for Both) */}
+                                  <div style={{
+                                    position: 'absolute',
+                                    top: '0.85rem',
+                                    right: '0.85rem',
+                                    zIndex: 3,
+                                    background: targetWho === 'NIKITA' ? '#e08298' : targetWho === 'MANZI' ? '#8B5E3C' : '#588157',
+                                    color: '#ffffff',
+                                    padding: '0.35rem 0.85rem',
+                                    borderRadius: '16px',
+                                    fontSize: '0.75rem',
+                                    fontWeight: 700,
+                                    letterSpacing: '0.04em',
+                                    boxShadow: '0 4px 14px rgba(0,0,0,0.35)',
+                                    border: '1px solid rgba(255, 255, 255, 0.3)'
+                                  }}>
+                                    {targetWho === 'NIKITA' ? 'Nikita' : targetWho === 'MANZI' ? 'Manzi' : 'Both'}
+                                  </div>
 
                                   {/* Catchy Main Event Title Banner */}
                                   <div style={{
