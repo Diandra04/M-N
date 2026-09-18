@@ -1,4 +1,4 @@
-/* Ultra-Minimalist Black & White Design System for Manzi & Nikita */
+/* Black & white design system */
 
 :root {
   --font-serif: 'Cormorant Garamond', Georgia, serif;
@@ -6,7 +6,6 @@
   --font-display: 'Cinzel', 'Bodoni Moda', serif;
   --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
 
-  /* Pure White & Black Minimalist Palette (Default) */
   --bg-main: #ffffff;
   --bg-card: #f9f9fb;
   --bg-card-hover: #ffffff;
@@ -21,36 +20,11 @@
   --text-muted: #666666;
   --text-accent: #111111;
 
-  --accent-ink: #111111;
   --badge-bg: rgba(0, 0, 0, 0.05);
   --badge-text: #111111;
 
   --shadow-sm: 0 4px 20px rgba(0, 0, 0, 0.06);
   --shadow-lg: 0 16px 40px rgba(0, 0, 0, 0.12);
-}
-
-[data-theme='light'] {
-  /* Pure White & Black Light Palette */
-  --bg-main: #ffffff;
-  --bg-card: rgba(248, 248, 248, 0.9);
-  --bg-card-hover: #ffffff;
-  --bg-input: rgba(0, 0, 0, 0.04);
-
-  --border-color: rgba(0, 0, 0, 0.15);
-  --border-active: rgba(0, 0, 0, 0.45);
-  --border-road: rgba(0, 0, 0, 0.3);
-
-  --text-primary: #000000;
-  --text-secondary: #444444;
-  --text-muted: #777777;
-  --text-accent: #000000;
-
-  --accent-ink: #000000;
-  --badge-bg: rgba(0, 0, 0, 0.06);
-  --badge-text: #000000;
-
-  --shadow-sm: 0 4px 20px rgba(0, 0, 0, 0.05);
-  --shadow-lg: 0 16px 50px rgba(0, 0, 0, 0.1);
 }
 
 * {
@@ -74,7 +48,6 @@ h1, h2, h3, h4, .font-serif {
   letter-spacing: 0.02em;
 }
 
-/* Minimal Line Divider */
 .minimal-line {
   display: flex;
   align-items: center;
@@ -98,14 +71,12 @@ h1, h2, h3, h4, .font-serif {
   background: var(--text-primary);
 }
 
-/* Container */
 .container {
   max-width: 1080px;
   margin: 0 auto;
   padding: 0 1.5rem;
 }
 
-/* Glassmorphic Minimal Card */
 .glass-card {
   background: var(--bg-card);
   backdrop-filter: blur(16px);
@@ -129,7 +100,7 @@ h1, h2, h3, h4, .font-serif {
   transform: scale(1.05);
 }
 
-/* Dynamic Black & White Roadline System */
+/* Animated dotted timeline down the left edge of the itinerary */
 .bw-road-track {
   position: absolute;
   top: 0.8rem;
@@ -212,7 +183,7 @@ h1, h2, h3, h4, .font-serif {
   z-index: 3;
 }
 
-/* 3D Flip Card System - Hardware Accelerated & Butter Smooth */
+/* Flip card */
 .flip-card-container {
   perspective: 1200px;
   position: relative;
@@ -261,15 +232,15 @@ h1, h2, h3, h4, .font-serif {
   flex-direction: column;
 }
 
-/* Prevent hover transform conflicts while mouse cursor is on the board */
-.flip-card-front:hover,
-.flip-card-back:hover {
+/* Keep each face flat on hover instead of following the container's flip transform */
+.flip-card-front:hover {
   transform: rotateY(0deg) translateZ(1px) !important;
   box-shadow: var(--shadow-lg);
 }
 
 .flip-card-back:hover {
   transform: rotateY(180deg) translateZ(1px) !important;
+  box-shadow: var(--shadow-lg);
 }
 
 .flip-card-container .event-card-img {
@@ -285,7 +256,6 @@ h1, h2, h3, h4, .font-serif {
   pointer-events: none;
 }
 
-/* Buttons */
 .btn-primary {
   background: var(--text-primary);
   color: var(--bg-main);
@@ -306,7 +276,7 @@ h1, h2, h3, h4, .font-serif {
 .btn-primary:hover {
   opacity: 0.9;
   transform: translateY(-2px);
-  box-shadow: 0 6px 24px rgba(255, 255, 255, 0.25);
+  box-shadow: var(--shadow-lg);
 }
 
 .btn-outline {
@@ -335,7 +305,6 @@ h1, h2, h3, h4, .font-serif {
   font-size: 0.78rem;
 }
 
-/* Badges */
 .badge {
   display: inline-flex;
   align-items: center;
@@ -357,7 +326,6 @@ h1, h2, h3, h4, .font-serif {
   background: var(--badge-bg);
 }
 
-/* Custom Checkbox */
 .custom-checkbox {
   width: 20px;
   height: 20px;
@@ -376,7 +344,6 @@ h1, h2, h3, h4, .font-serif {
   color: var(--bg-main);
 }
 
-/* Modal Styling */
 .modal-overlay {
   position: fixed;
   top: 0;
@@ -405,7 +372,6 @@ h1, h2, h3, h4, .font-serif {
   box-shadow: var(--shadow-lg);
 }
 
-/* Form Inputs */
 .form-group {
   margin-bottom: 1.25rem;
 }
@@ -437,7 +403,6 @@ h1, h2, h3, h4, .font-serif {
   border-color: var(--border-active);
 }
 
-/* Responsive Grid & Breakpoints */
 .grid-2 {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
@@ -450,13 +415,11 @@ h1, h2, h3, h4, .font-serif {
   gap: 1.5rem;
 }
 
-/* Responsive Image & Video Baseline */
 img, video, canvas, svg {
   max-width: 100%;
   height: auto;
 }
 
-/* Responsive Hero Countdown Badge */
 .hero-countdown-badge {
   position: absolute;
   top: 2.5rem;
@@ -467,9 +430,7 @@ img, video, canvas, svg {
   z-index: 10;
 }
 
-/* Comprehensive Responsive System for Phones, iPads & Laptops */
-
-/* LAPTOPS & TABLETS (max-width: 1024px) */
+/* Laptops & tablets */
 @media (max-width: 1024px) {
   .hero-countdown-badge {
     top: 2rem;
@@ -478,7 +439,7 @@ img, video, canvas, svg {
   }
 }
 
-/* TABLETS & IPADS (max-width: 900px) */
+/* Tablets & iPads */
 @media (max-width: 900px) {
   .hero-countdown-badge {
     position: relative;
@@ -493,7 +454,7 @@ img, video, canvas, svg {
   }
 }
 
-/* PHONES & SMALL TABLETS (max-width: 768px) */
+/* Phones & small tablets */
 @media (max-width: 768px) {
   .container {
     padding: 0 1rem;
@@ -514,7 +475,7 @@ img, video, canvas, svg {
     border-radius: 14px;
   }
 
-  .btn-primary, .btn-outline, .btn-secondary {
+  .btn-primary, .btn-outline {
     min-height: 44px;
     padding: 0.6rem 1rem;
     font-size: 0.82rem;
@@ -524,7 +485,6 @@ img, video, canvas, svg {
   h2 { font-size: clamp(1.5rem, 5.5vw, 2.2rem) !important; }
   h3 { font-size: clamp(1.2rem, 4.5vw, 1.6rem) !important; }
 
-  /* Mobile connector line scaling */
   .bw-connector-line {
     width: 1.1rem !important;
     left: -1.1rem !important;
@@ -535,7 +495,7 @@ img, video, canvas, svg {
   }
 }
 
-/* SMALL MOBILE PHONES (max-width: 480px) */
+/* Small mobile phones */
 @media (max-width: 480px) {
   .container {
     padding: 0 0.75rem;
@@ -551,18 +511,6 @@ img, video, canvas, svg {
 
   .hero-countdown-badge span {
     font-size: clamp(3.8rem, 16vw, 6rem) !important;
-  }
-
-  /* Make tab bars horizontally scrollable on small screens if needed */
-  .nav-tabs, .folder-tabs {
-    overflow-x: auto;
-    white-space: nowrap;
-    -webkit-overflow-scrolling: touch;
-    scrollbar-width: none;
-  }
-
-  .nav-tabs::-webkit-scrollbar, .folder-tabs::-webkit-scrollbar {
-    display: none;
   }
 }
 
