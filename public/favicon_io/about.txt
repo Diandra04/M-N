@@ -1,6 +1,6 @@
 This favicon was generated using the following font:
 
-- Font Title: Fauna One
+- Font Title: Love Light
 - Font Author: undefined
-- Font Source: https://fonts.gstatic.com/s/faunaone/v16/wlpzgwTPBVpjpCuwkuEx2UxLYClOCg.ttf
+- Font Source: https://fonts.gstatic.com/s/lovelight/v8/t5tlIR0TNJyZWimpNAXDjKbCyTHuspo.ttf
 - Font License: undefined)
