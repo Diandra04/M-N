@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { 
-  Plus, Trash2, Edit, RotateCcw, Clock, MapPin, CheckCircle2, FileText 
+import {
+  Plus, Trash2, Edit, RotateCcw, Clock, MapPin, CheckCircle2, FileText, AlertTriangle
 } from 'lucide-react';
 
 export function ItineraryPlanner({ 
@@ -26,6 +26,14 @@ export function ItineraryPlanner({
       return 'MANZI';
     }
     return 'BOTH';
+  };
+
+  const isDateInPast = (dateStr) => {
+    if (!dateStr) return false;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const target = new Date(`${dateStr}T00:00:00`);
+    return target < today;
   };
 
   // Filter events by selected person filter
@@ -301,6 +309,7 @@ export function ItineraryPlanner({
                     {rankGroup.events.map((evt) => {
                       const isFlipped = flippedIds.has(evt.id);
                       const targetWho = getEventPerson(evt);
+                      const overdue = !evt.completed && isDateInPast(dateKey);
 
                       return (
                         <div key={evt.id} style={{ position: 'relative' }}>
@@ -317,8 +326,8 @@ export function ItineraryPlanner({
                             <div className="flip-card-inner">
                               
                               {/* FRONT SIDE (SQUARE IMAGE + EDITORIAL DATE & CATCHY NAME) */}
-                              <div 
-                                className="flip-card-front glass-card"
+                              <div
+                                className={`flip-card-front glass-card ${overdue ? 'is-overdue' : ''}`}
                                 onClick={() => toggleFlip(evt.id)}
                                 style={{
                                   background: 'var(--bg-card)',
@@ -328,7 +337,11 @@ export function ItineraryPlanner({
                                   flexDirection: 'column',
                                   padding: 0,
                                   borderRadius: '10px',
-                                  border: '1px solid var(--border-color)',
+                                  border: evt.completed
+                                    ? '1px solid rgba(88, 129, 87, 0.55)'
+                                    : overdue
+                                    ? '1px solid rgba(214, 69, 69, 0.55)'
+                                    : '1px solid var(--border-color)',
                                   overflow: 'hidden'
                                 }}
                               >
@@ -341,10 +354,15 @@ export function ItineraryPlanner({
                                   background: '#111111'
                                 }}>
                                   {evt.image ? (
-                                    <img 
-                                      src={evt.image} 
-                                      alt={evt.title} 
-                                      style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                                    <img
+                                      src={evt.image}
+                                      alt={evt.title}
+                                      style={{
+                                        width: '100%',
+                                        height: '100%',
+                                        objectFit: 'cover',
+                                        filter: evt.completed ? 'grayscale(0.65) brightness(0.9)' : 'none'
+                                      }}
                                       className="event-card-img"
                                     />
                                   ) : (
@@ -376,7 +394,7 @@ export function ItineraryPlanner({
                                     background: 'rgba(0, 0, 0, 0.55)',
                                     backdropFilter: 'blur(12px)',
                                     WebkitBackdropFilter: 'blur(12px)',
-                                    border: '1px solid rgba(255, 255, 255, 0.22)',
+                                    border: overdue ? '1px solid rgba(214, 69, 69, 0.6)' : '1px solid rgba(255, 255, 255, 0.22)',
                                     borderRadius: '8px',
                                     padding: '0.4rem 0.75rem',
                                     color: '#ffffff',
@@ -390,8 +408,8 @@ export function ItineraryPlanner({
                                       textTransform: 'uppercase',
                                       lineHeight: 1
                                     }}>
-                                      {evt.dayLabel && evt.dayLabel.includes(',') 
-                                        ? evt.dayLabel.split(',')[1].trim() 
+                                      {evt.dayLabel && evt.dayLabel.includes(',')
+                                        ? evt.dayLabel.split(',')[1].trim()
                                         : evt.dayLabel || evt.date}
                                     </span>
                                     <span style={{
@@ -403,6 +421,22 @@ export function ItineraryPlanner({
                                     }}>
                                       {evt.time}
                                     </span>
+                                    {overdue && (
+                                      <span style={{
+                                        display: 'inline-flex',
+                                        alignItems: 'center',
+                                        gap: '0.25rem',
+                                        marginTop: '0.35rem',
+                                        fontSize: '0.66rem',
+                                        fontWeight: 800,
+                                        color: '#ff8a8a',
+                                        letterSpacing: '0.08em',
+                                        textTransform: 'uppercase'
+                                      }}>
+                                        <AlertTriangle size={11} />
+                                        Overdue
+                                      </span>
+                                    )}
                                   </div>
 
                                   {/* Person Name Badge Overlay on Front side (Only for Nikita or Manzi, hidden for Both) */}
@@ -423,6 +457,40 @@ export function ItineraryPlanner({
                                       border: '1px solid rgba(255, 255, 255, 0.3)'
                                     }}>
                                       {targetWho === 'NIKITA' ? 'Nikita' : 'Manzi'}
+                                    </div>
+                                  )}
+
+                                  {/* Completed Stamp Overlay */}
+                                  {evt.completed && (
+                                    <div style={{
+                                      position: 'absolute',
+                                      inset: 0,
+                                      zIndex: 4,
+                                      background: 'rgba(0, 0, 0, 0.4)',
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      justifyContent: 'center',
+                                      pointerEvents: 'none'
+                                    }}>
+                                      <div style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '0.4rem',
+                                        background: '#588157',
+                                        color: '#ffffff',
+                                        padding: '0.5rem 1.1rem',
+                                        borderRadius: '999px',
+                                        fontSize: '0.82rem',
+                                        fontWeight: 800,
+                                        letterSpacing: '0.08em',
+                                        textTransform: 'uppercase',
+                                        transform: 'rotate(-8deg)',
+                                        boxShadow: '0 6px 20px rgba(0,0,0,0.4)',
+                                        border: '2px solid rgba(255,255,255,0.6)'
+                                      }}>
+                                        <CheckCircle2 size={16} />
+                                        Completed
+                                      </div>
                                     </div>
                                   )}
 
@@ -541,14 +609,19 @@ export function ItineraryPlanner({
                                         border: 'none',
                                         cursor: 'pointer',
                                         fontSize: '0.82rem',
-                                        color: evt.completed ? 'var(--text-muted)' : 'var(--text-primary)',
+                                        color: evt.completed ? 'var(--text-muted)' : overdue ? '#d64545' : 'var(--text-primary)',
                                         fontWeight: 600
                                       }}
                                     >
-                                      <div className={`custom-checkbox ${evt.completed ? 'checked' : ''}`}>
+                                      <div
+                                        className={`custom-checkbox ${evt.completed ? 'checked' : ''}`}
+                                        style={overdue ? { borderColor: 'rgba(214, 69, 69, 0.6)' } : undefined}
+                                      >
                                         {evt.completed && <CheckCircle2 size={14} />}
                                       </div>
-                                      <span>{evt.completed ? 'Marked Completed' : 'Mark Event Completed'}</span>
+                                      <span>
+                                        {evt.completed ? 'Marked Completed' : overdue ? 'Overdue — Mark Completed' : 'Mark Event Completed'}
+                                      </span>
                                     </button>
 
                                     {/* Direct Edit & Delete Actions */}

@@ -245,7 +245,16 @@ h1, h2, h3, h4, .font-serif {
 
 .flip-card-container .event-card-img {
   transform: none !important;
-  transition: none !important;
+  transition: filter 0.3s ease !important;
+}
+
+@keyframes overduePulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(214, 69, 69, 0.35); }
+  50% { box-shadow: 0 0 0 6px rgba(214, 69, 69, 0); }
+}
+
+.flip-card-front.is-overdue {
+  animation: overduePulse 2.5s ease-in-out infinite;
 }
 
 .flip-card-container.flipped .flip-card-front {
