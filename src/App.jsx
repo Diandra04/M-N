@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { onAuthStateChanged, signOut } from 'firebase/auth';
 import { Navbar } from './components/Navbar';
 import { Hero } from './components/Hero';
 import { ItineraryPlanner } from './components/ItineraryPlanner';
@@ -7,36 +8,80 @@ import { Footer } from './components/Footer';
 import { EditDetailsModal } from './components/EditDetailsModal';
 import { AddEventModal } from './components/AddEventModal';
 import { LoginModal } from './components/LoginModal';
-import { getStoredData, saveStoredData, resetStoredData } from './services/storage';
+import { SignInGate } from './components/SignInGate';
+import { auth } from './services/firebase';
+import { getRoleForEmail } from './services/googleAuth';
+import {
+  initialSharedData,
+  initialPrivateData,
+  subscribeShared,
+  saveShared,
+  resetSharedData,
+  subscribePrivate,
+  savePrivate,
+} from './services/storage';
 
 export default function App() {
-  const [data, setData] = useState(() => getStoredData());
+  const [data, setData] = useState(initialSharedData);
+  const [privateData, setPrivateData] = useState(initialPrivateData);
   const [editMode, setEditMode] = useState(false);
-  const [currentUser, setCurrentUser] = useState(() => {
-    return localStorage.getItem('MN_ACTIVE_USER') || 'GUEST';
-  }); // 'GUEST' | 'MANZI' | 'NIKITA'
-  
+  const [currentUser, setCurrentUser] = useState('GUEST'); // 'GUEST' | 'MANZI' | 'NIKITA'
+  const [authReady, setAuthReady] = useState(false);
+
   const [isEditDetailsOpen, setIsEditDetailsOpen] = useState(false);
   const [isAddEventOpen, setIsAddEventOpen] = useState(false);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
-  const [loginTargetRole, setLoginTargetRole] = useState('MANZI');
   const [editingEvent, setEditingEvent] = useState(null);
 
-  // Sync data updates to localStorage
   useEffect(() => {
-    saveStoredData(data);
-  }, [data]);
+    const unsubscribe = subscribeShared(setData);
+    return unsubscribe;
+  }, []);
 
-  // Event handlers
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      setCurrentUser(getRoleForEmail(user?.email) || 'GUEST');
+      setAuthReady(true);
+    });
+    return unsubscribe;
+  }, []);
+
+  useEffect(() => {
+    // vows/notes are per-person Firestore docs, only readable by that account
+    if (currentUser !== 'MANZI' && currentUser !== 'NIKITA') {
+      setPrivateData(initialPrivateData);
+      return;
+    }
+    const unsubscribe = subscribePrivate(currentUser, setPrivateData);
+    return unsubscribe;
+  }, [currentUser]);
+
+  const updateShared = (updater) => {
+    setData(prev => {
+      const next = typeof updater === 'function' ? updater(prev) : updater;
+      saveShared(next);
+      return next;
+    });
+  };
+
+  const updatePrivate = (updater) => {
+    if (currentUser !== 'MANZI' && currentUser !== 'NIKITA') return;
+    setPrivateData(prev => {
+      const next = typeof updater === 'function' ? updater(prev) : updater;
+      savePrivate(currentUser, next);
+      return next;
+    });
+  };
+
   const handleToggleComplete = (eventId) => {
-    setData(prev => ({
+    updateShared(prev => ({
       ...prev,
       events: prev.events.map(e => e.id === eventId ? { ...e, completed: !e.completed } : e)
     }));
   };
 
   const handleDeleteEvent = (eventId) => {
-    setData(prev => ({
+    updateShared(prev => ({
       ...prev,
       events: prev.events.filter(e => e.id !== eventId)
     }));
@@ -51,7 +96,7 @@ export default function App() {
       date: 'Just now'
     };
 
-    setData(prev => {
+    updateShared(prev => {
       const exists = prev.events.some(e => e.id === savedEvent.id);
       let updatedEvents;
       if (exists) {
@@ -65,8 +110,8 @@ export default function App() {
         ...(savedEvent.dateTitle ? { [savedEvent.date]: savedEvent.dateTitle } : {})
       };
 
-      return { 
-        ...prev, 
+      return {
+        ...prev,
         events: updatedEvents,
         dayTitles: updatedDayTitles,
         itineraryActivityLog: [logEntry, ...(prev.itineraryActivityLog || [])]
@@ -77,7 +122,7 @@ export default function App() {
 
   const handleUpdateDayTitle = (dateKey, newTitle) => {
     if (!dateKey) return;
-    setData(prev => ({
+    updateShared(prev => ({
       ...prev,
       dayTitles: {
         ...(prev.dayTitles || {}),
@@ -97,60 +142,31 @@ export default function App() {
   };
 
   const handleSaveDetails = (updated) => {
-    setData(prev => ({
+    updateShared(prev => ({
       ...prev,
       couple: { ...prev.couple, ...updated.couple },
       tripInfo: { ...prev.tripInfo, ...updated.tripInfo },
     }));
   };
 
-  // Calendar To-Do Planner Handlers
   const handleAddTodo = (newTodo) => {
-    if (newTodo.listType === 'PRIVATE') {
-      if (currentUser === 'MANZI') {
-        setData(prev => ({
-          ...prev,
-          manziSecretTodos: [newTodo, ...(prev.manziSecretTodos || [])]
-        }));
-      } else if (currentUser === 'NIKITA') {
-        setData(prev => ({
-          ...prev,
-          nikitaSecretTodos: [newTodo, ...(prev.nikitaSecretTodos || [])]
-        }));
-      }
-    } else {
-      setData(prev => ({
-        ...prev,
-        sharedTodos: [newTodo, ...(prev.sharedTodos || [])]
-      }));
-    }
+    updateShared(prev => ({
+      ...prev,
+      sharedTodos: [newTodo, ...(prev.sharedTodos || [])]
+    }));
   };
 
-  const handleToggleTodo = (todoId, listType) => {
-    if (listType === 'PRIVATE') {
-      if (currentUser === 'MANZI') {
-        setData(prev => ({
-          ...prev,
-          manziSecretTodos: (prev.manziSecretTodos || []).map(t => t.id === todoId ? { ...t, completed: !t.completed } : t)
-        }));
-      } else if (currentUser === 'NIKITA') {
-        setData(prev => ({
-          ...prev,
-          nikitaSecretTodos: (prev.nikitaSecretTodos || []).map(t => t.id === todoId ? { ...t, completed: !t.completed } : t)
-        }));
-      }
-    } else {
-      setData(prev => ({
-        ...prev,
-        sharedTodos: (prev.sharedTodos || []).map(t => t.id === todoId ? { ...t, completed: !t.completed } : t)
-      }));
-    }
+  const handleToggleTodo = (todoId) => {
+    updateShared(prev => ({
+      ...prev,
+      sharedTodos: (prev.sharedTodos || []).map(t => t.id === todoId ? { ...t, completed: !t.completed } : t)
+    }));
   };
 
   const handleSignTodo = (todoId, role) => {
     const isM = role === 'MANZI';
     const isN = role === 'NIKITA';
-    setData(prev => ({
+    updateShared(prev => ({
       ...prev,
       sharedTodos: (prev.sharedTodos || []).map(t => {
         if (t.id === todoId) {
@@ -168,73 +184,42 @@ export default function App() {
     }));
   };
 
-  const handleDeleteTodo = (todoId, listType) => {
-    if (listType === 'PRIVATE') {
-      if (currentUser === 'MANZI') {
-        setData(prev => ({
-          ...prev,
-          manziSecretTodos: (prev.manziSecretTodos || []).filter(t => t.id !== todoId)
-        }));
-      } else if (currentUser === 'NIKITA') {
-        setData(prev => ({
-          ...prev,
-          nikitaSecretTodos: (prev.nikitaSecretTodos || []).filter(t => t.id !== todoId)
-        }));
-      }
-    } else {
-      setData(prev => ({
-        ...prev,
-        sharedTodos: (prev.sharedTodos || []).filter(t => t.id !== todoId)
-      }));
-    }
+  const handleDeleteTodo = (todoId) => {
+    updateShared(prev => ({
+      ...prev,
+      sharedTodos: (prev.sharedTodos || []).filter(t => t.id !== todoId)
+    }));
   };
 
-  // Secret Vault Handlers
   const handleSaveVows = (vowsText) => {
-    if (currentUser === 'MANZI') {
-      setData(prev => ({ ...prev, manziVows: vowsText }));
-    } else if (currentUser === 'NIKITA') {
-      setData(prev => ({ ...prev, nikitaVows: vowsText }));
-    }
+    updatePrivate(prev => ({ ...prev, vows: vowsText }));
   };
 
-  const handleAddSecretNote = (newSecret) => {
-    if (currentUser === 'MANZI') {
-      setData(prev => ({
-        ...prev,
-        manziSecretNotes: [newSecret, ...(prev.manziSecretNotes || [])]
-      }));
-    } else if (currentUser === 'NIKITA') {
-      setData(prev => ({
-        ...prev,
-        nikitaSecretNotes: [newSecret, ...(prev.nikitaSecretNotes || [])]
-      }));
-    }
+  const handleSavePersonalNotes = (notesText) => {
+    updatePrivate(prev => ({ ...prev, personalNotes: notesText }));
   };
 
-  const handleDeleteSecretNote = (secretId) => {
-    if (currentUser === 'MANZI') {
-      setData(prev => ({
-        ...prev,
-        manziSecretNotes: (prev.manziSecretNotes || []).filter(s => s.id !== secretId)
-      }));
-    } else if (currentUser === 'NIKITA') {
-      setData(prev => ({
-        ...prev,
-        nikitaSecretNotes: (prev.nikitaSecretNotes || []).filter(s => s.id !== secretId)
-      }));
-    }
+  const handleSaveGuestList = (guestList) => {
+    updateShared(prev => ({ ...prev, guestList }));
+  };
+
+  const handleSaveBudget = (budgetPlanner) => {
+    updateShared(prev => ({ ...prev, budgetPlanner }));
+  };
+
+  const handleSaveDocuments = (documentVault) => {
+    updateShared(prev => ({ ...prev, documentVault }));
   };
 
   const handleCreateMeetingRequest = (requestData) => {
-    setData(prev => ({
+    updateShared(prev => ({
       ...prev,
       meetingRequests: [requestData, ...(prev.meetingRequests || [])]
     }));
   };
 
   const handleRespondMeetingRequest = (requestId, status, newTime = null) => {
-    setData(prev => {
+    updateShared(prev => {
       const updatedRequests = (prev.meetingRequests || []).map(r => {
         if (r.id === requestId) {
           return {
@@ -276,16 +261,22 @@ export default function App() {
 
   const handleResetData = () => {
     if (window.confirm('Are you sure you want to reset all itinerary details to default?')) {
-      const fresh = resetStoredData();
-      setData(fresh);
-      setCurrentUser('GUEST');
-      localStorage.removeItem('MN_ACTIVE_USER');
+      resetSharedData();
+      setData(initialSharedData);
     }
   };
 
+  const handleLogout = () => {
+    signOut(auth);
+  };
+
+  if (!authReady || currentUser === 'GUEST') {
+    return <SignInGate />;
+  }
+
   return (
     <div className="app-root">
-      
+
       <Navbar
         couple={data.couple}
         editMode={editMode}
@@ -293,12 +284,8 @@ export default function App() {
         onOpenEditModal={() => setIsEditDetailsOpen(true)}
         onResetData={handleResetData}
         currentUser={currentUser}
-        onOpenLoginModal={(role) => {
-          if (role && (role === 'MANZI' || role === 'NIKITA')) {
-            setLoginTargetRole(role);
-          }
-          setIsLoginModalOpen(true);
-        }}
+        onOpenLoginModal={() => setIsLoginModalOpen(true)}
+        onLogout={handleLogout}
       />
 
       <Hero
@@ -310,6 +297,7 @@ export default function App() {
       <ItineraryPlanner
         events={data.events}
         dayTitles={data.dayTitles || {}}
+        currentUser={currentUser}
         onUpdateDayTitle={handleUpdateDayTitle}
         onToggleComplete={handleToggleComplete}
         onDeleteEvent={handleDeleteEvent}
@@ -319,39 +307,31 @@ export default function App() {
 
       <SecretVault
         currentUser={currentUser}
-        onLogout={() => {
-          setCurrentUser('GUEST');
-          localStorage.removeItem('MN_ACTIVE_USER');
-        }}
+        onLogout={handleLogout}
         events={data.events || []}
         sharedTodos={data.sharedTodos || []}
-        manziSecretTodos={data.manziSecretTodos || []}
-        nikitaSecretTodos={data.nikitaSecretTodos || []}
-        manziSecretNotes={data.manziSecretNotes || []}
-        nikitaSecretNotes={data.nikitaSecretNotes || []}
-        manziVows={data.manziVows || ''}
-        nikitaVows={data.nikitaVows || ''}
+        vows={privateData.vows || ''}
+        personalNotes={privateData.personalNotes || ''}
+        guestList={data.guestList || []}
+        budgetPlanner={data.budgetPlanner || { totalBudget: 10000, expenses: [] }}
+        documentVault={data.documentVault || []}
         meetingRequests={data.meetingRequests || []}
         onCreateMeetingRequest={handleCreateMeetingRequest}
         onRespondMeetingRequest={handleRespondMeetingRequest}
         onSaveVows={handleSaveVows}
+        onSavePersonalNotes={handleSavePersonalNotes}
+        onSaveGuestList={handleSaveGuestList}
+        onSaveBudget={handleSaveBudget}
+        onSaveDocuments={handleSaveDocuments}
         onAddTodo={handleAddTodo}
         onToggleTodo={handleToggleTodo}
         onSignTodo={handleSignTodo}
         onDeleteTodo={handleDeleteTodo}
-        onAddSecretNote={handleAddSecretNote}
-        onDeleteSecretNote={handleDeleteSecretNote}
-        onOpenLoginModal={(role) => {
-          if (role && (role === 'MANZI' || role === 'NIKITA')) {
-            setLoginTargetRole(role);
-          }
-          setIsLoginModalOpen(true);
-        }}
+        onOpenLoginModal={() => setIsLoginModalOpen(true)}
       />
 
       <Footer couple={data.couple} />
 
-      {/* Modal 1: Edit Details Modal */}
       {isEditDetailsOpen && (
         <EditDetailsModal
           tripInfo={data.tripInfo}
@@ -361,7 +341,6 @@ export default function App() {
         />
       )}
 
-      {/* Modal 2: Add / Edit Event Modal */}
       <AddEventModal
         isOpen={isAddEventOpen}
         onClose={() => {
@@ -373,26 +352,10 @@ export default function App() {
         dayTitles={data.dayTitles || {}}
       />
 
-      {/* Modal 3: Profile Login Modal */}
       <LoginModal
         isOpen={isLoginModalOpen}
         onClose={() => setIsLoginModalOpen(false)}
-        initialRole={loginTargetRole}
-        onLogin={(role) => {
-          setCurrentUser(role);
-          localStorage.setItem('MN_ACTIVE_USER', role);
-        }}
-        onUpdatePin={(role, newPin) => {
-          setData(prev => ({
-            ...prev,
-            auth: {
-              ...(prev.auth || { manziPin: '1234', nikitaPin: '5678' }),
-              [role === 'MANZI' ? 'manziPin' : 'nikitaPin']: newPin
-            }
-          }));
-        }}
-        currentUser={currentUser}
-        auth={data.auth || { manziPin: '1234', nikitaPin: '5678' }}
+        onLogin={() => {}} // currentUser updates via onAuthStateChanged above
       />
 
     </div>

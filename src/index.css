@@ -249,12 +249,12 @@ h1, h2, h3, h4, .font-serif {
 }
 
 @keyframes overduePulse {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(214, 69, 69, 0.35); }
-  50% { box-shadow: 0 0 0 6px rgba(214, 69, 69, 0); }
+  0%, 100% { box-shadow: 0 0 0 0 rgba(201, 154, 154, 0.4); }
+  50% { box-shadow: 0 0 0 7px rgba(201, 154, 154, 0); }
 }
 
 .flip-card-front.is-overdue {
-  animation: overduePulse 2.5s ease-in-out infinite;
+  animation: overduePulse 3s ease-in-out infinite;
 }
 
 .flip-card-container.flipped .flip-card-front {
@@ -345,6 +345,22 @@ h1, h2, h3, h4, .font-serif {
   justify-content: center;
   cursor: pointer;
   transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.modal-close-btn {
+  min-width: 40px;
+  min-height: 40px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  flex-shrink: 0;
+  transition: background-color 0.2s ease;
+}
+
+.modal-close-btn:hover {
+  background: var(--bg-input);
 }
 
 .custom-checkbox.checked {
@@ -439,6 +455,13 @@ img, video, canvas, svg {
   z-index: 10;
 }
 
+.signin-gate {
+  background-image: linear-gradient(to bottom, rgba(5,5,7,0.55), rgba(5,5,7,0.88)), url('/images/mn-signin-bg.jpg');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
 /* Laptops & tablets */
 @media (max-width: 1024px) {
   .hero-countdown-badge {
@@ -456,6 +479,10 @@ img, video, canvas, svg {
     right: 0;
     margin-bottom: 2rem;
     align-self: flex-start;
+    /* Badge sits outside .container (unlike the rest of the hero content),
+       so it needs its own left padding once it drops into normal flow —
+       otherwise it sits flush against the screen edge on mobile. */
+    padding-left: 1.5rem;
   }
 
   .grid-2, .grid-3 {
@@ -467,6 +494,10 @@ img, video, canvas, svg {
 @media (max-width: 768px) {
   .container {
     padding: 0 1rem;
+  }
+
+  .hero-countdown-badge {
+    padding-left: 1rem;
   }
 
   .glass-card {
@@ -502,6 +533,27 @@ img, video, canvas, svg {
   .bw-connector-dot {
     left: -1.1rem !important;
   }
+
+  /* iOS Safari renders fixed backgrounds poorly alongside backdrop-filter panels */
+  .hero-section,
+  #vault {
+    background-attachment: scroll !important;
+  }
+
+  .vault-hub {
+    padding: 1.5rem !important;
+    border-radius: 16px !important;
+  }
+
+  .vault-panel {
+    padding: 1.25rem !important;
+    border-radius: 14px !important;
+  }
+
+  .custom-checkbox {
+    width: 26px;
+    height: 26px;
+  }
 }
 
 /* Small mobile phones */
@@ -516,10 +568,37 @@ img, video, canvas, svg {
 
   .hero-countdown-badge {
     gap: 0.4rem;
+    padding-left: 0.75rem;
   }
 
-  .hero-countdown-badge span {
+  .hero-day-number {
     font-size: clamp(3.8rem, 16vw, 6rem) !important;
+  }
+
+  .vault-hub {
+    padding: 1rem !important;
+  }
+
+  .vault-panel {
+    padding: 0.85rem !important;
+  }
+
+  .vault-cal-grid {
+    gap: 0.2rem !important;
+  }
+
+  .vault-cal-cell {
+    min-height: 42px !important;
+    padding: 0.2rem !important;
+  }
+
+  .vault-add-item-row {
+    flex-wrap: wrap;
+  }
+
+  .vault-add-item-row button {
+    width: 100%;
+    justify-content: center;
   }
 }
 

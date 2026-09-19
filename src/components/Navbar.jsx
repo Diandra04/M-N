@@ -1,13 +1,15 @@
 import React from 'react';
 import { UserCheck } from 'lucide-react';
 
-export function Navbar({ 
-  couple, 
+export function Navbar({
+  couple,
   currentUser,
-  onOpenLoginModal
+  onOpenLoginModal,
+  onLogout
 }) {
   const isManzi = currentUser === 'MANZI';
   const isNikita = currentUser === 'NIKITA';
+  const isSignedIn = isManzi || isNikita;
 
   return (
     <nav style={{
@@ -32,11 +34,11 @@ export function Navbar({
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.55rem', flexWrap: 'wrap' }}>
           <button
-            onClick={() => onOpenLoginModal(isManzi ? 'NIKITA' : 'MANZI')}
-            style={{ 
+            onClick={() => (isSignedIn ? onLogout() : onOpenLoginModal())}
+            style={{
               background: isManzi ? '#8B5E3C' : isNikita ? '#E08298' : 'transparent',
-              color: isManzi || isNikita ? '#ffffff' : 'var(--text-primary)',
-              border: isManzi || isNikita ? 'none' : '1px solid var(--border-color)',
+              color: isSignedIn ? '#ffffff' : 'var(--text-primary)',
+              border: isSignedIn ? 'none' : '1px solid var(--border-color)',
               padding: '0.45rem 1.1rem',
               borderRadius: '20px',
               fontSize: '0.82rem',
@@ -47,10 +49,10 @@ export function Navbar({
               gap: '0.45rem',
               transition: 'all 0.25s ease'
             }}
-            title="Click to switch profile"
+            title={isSignedIn ? 'Click to sign out' : 'Sign in'}
           >
             <UserCheck size={14} />
-            <span>{isManzi ? 'Manzi' : isNikita ? 'Nikita' : 'Sign In'}</span>
+            <span>{isManzi ? 'Manzi (Sign Out)' : isNikita ? 'Nikita (Sign Out)' : 'Sign In'}</span>
           </button>
         </div>
       </div>

@@ -1,40 +1,33 @@
 import React, { useState, useEffect } from 'react';
-import { Navigation } from 'lucide-react';
 import { KnotAnimation } from './KnotAnimation';
 
+const CIVIL_WEDDING_DATE = new Date(2026, 9, 15, 12, 30, 0); // October 15, 2026 at 12:30 PM
+
+function getTimeLeft() {
+  const diff = CIVIL_WEDDING_DATE.getTime() - Date.now();
+
+  if (diff <= 0) {
+    return { days: 0, hours: 0, minutes: 0, seconds: 0 };
+  }
+
+  return {
+    days: Math.floor(diff / (1000 * 60 * 60 * 24)),
+    hours: Math.floor((diff / (1000 * 60 * 60)) % 24),
+    minutes: Math.floor((diff / (1000 * 60)) % 60),
+    seconds: Math.floor((diff / 1000) % 60),
+  };
+}
+
 export function Hero({ couple }) {
-  const [timeLeft, setTimeLeft] = useState({ days: 27, hours: 0, minutes: 0, seconds: 0 });
+  const [timeLeft, setTimeLeft] = useState(getTimeLeft);
 
   useEffect(() => {
-    const civilWeddingDate = new Date(2026, 9, 15, 12, 30, 0); // October 15, 2026 at 12:30 PM
-
-    const updateCountdown = () => {
-      const now = new Date();
-      const diff = civilWeddingDate.getTime() - now.getTime();
-
-      if (diff > 0) {
-        const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-        const hours = Math.floor((diff / (1000 * 60 * 60)) % 24);
-        const minutes = Math.floor((diff / (1000 * 60)) % 60);
-        const seconds = Math.floor((diff / 1000) % 60);
-        setTimeLeft({ days, hours, minutes, seconds });
-      } else {
-        setTimeLeft({ days: 0, hours: 0, minutes: 0, seconds: 0 });
-      }
-    };
-
-    updateCountdown();
-    const interval = setInterval(updateCountdown, 1000);
+    const interval = setInterval(() => setTimeLeft(getTimeLeft()), 1000);
     return () => clearInterval(interval);
   }, []);
 
-  const scrollToItinerary = () => {
-    const el = document.getElementById('itinerary');
-    if (el) el.scrollIntoView({ behavior: 'smooth' });
-  };
-
   return (
-    <section style={{
+    <section className="hero-section" style={{
       position: 'relative',
       minHeight: '88vh',
       display: 'flex',
@@ -49,9 +42,9 @@ export function Hero({ couple }) {
       borderBottom: '1px solid var(--border-color)'
     }}>
       <div className="hero-countdown-badge">
-        <span style={{ 
-          fontFamily: 'var(--font-serif)', 
-          fontSize: 'clamp(6rem, 12vw, 10.5rem)', 
+        <span className="hero-day-number" style={{
+          fontFamily: 'var(--font-serif)',
+          fontSize: 'clamp(6rem, 12vw, 10.5rem)',
           fontWeight: '300', 
           lineHeight: 0.8, 
           color: '#ffffff',
@@ -116,7 +109,7 @@ export function Hero({ couple }) {
               marginBottom: '1rem',
               textShadow: '0 2px 14px rgba(0,0,0,0.9)'
             }}>
-              “You pierce my soul. I am half agony, half hope...I have loved none but you.”
+              “What began as a simple conversation, ended in love.”
               <footer style={{
                 fontSize: '0.85rem',
                 fontStyle: 'normal',
@@ -124,7 +117,30 @@ export function Hero({ couple }) {
                 marginTop: '0.4rem',
                 letterSpacing: '0.05em'
               }}>
-                ― Jane Austen, Persuasion
+                ― Mark Anthony
+              </footer>
+            </blockquote>
+
+            <blockquote style={{
+              fontSize: '1rem',
+              color: 'rgba(255,255,255,0.85)',
+              fontFamily: 'var(--font-serif)',
+              fontStyle: 'italic',
+              lineHeight: 1.5,
+              borderLeft: '2px solid rgba(255,255,255,0.4)',
+              paddingLeft: '1.1rem',
+              marginBottom: '1rem',
+              textShadow: '0 2px 14px rgba(0,0,0,0.9)'
+            }}>
+              “You are the best surprise of my life.”
+              <footer style={{
+                fontSize: '0.78rem',
+                fontStyle: 'normal',
+                color: 'rgba(255,255,255,0.65)',
+                marginTop: '0.4rem',
+                letterSpacing: '0.05em'
+              }}>
+                ― Poets Love Her
               </footer>
             </blockquote>
 
@@ -143,12 +159,6 @@ export function Hero({ couple }) {
 
           <div style={{ margin: '1rem 0 2rem 0', maxWidth: '520px', width: '100%' }}>
             <KnotAnimation />
-          </div>
-
-          <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }} className="no-print">
-            <button onClick={scrollToItinerary} className="btn-primary" style={{ gap: '0.5rem' }}>
-              <Navigation size={15} /> Explore Itinerary Route
-            </button>
           </div>
         </div>
       </div>

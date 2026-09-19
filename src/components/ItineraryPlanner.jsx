@@ -1,19 +1,22 @@
 import React, { useState } from 'react';
 import {
-  Plus, Trash2, Edit, RotateCcw, Clock, MapPin, CheckCircle2, FileText, AlertTriangle
+  Plus, Trash2, Edit, RotateCcw, Clock, MapPin, CheckCircle2, AlertTriangle
 } from 'lucide-react';
 
-export function ItineraryPlanner({ 
-  events = [], 
+export function ItineraryPlanner({
+  events = [],
   dayTitles = {},
+  currentUser,
   onUpdateDayTitle,
-  onToggleComplete, 
-  onDeleteEvent, 
-  onOpenAddModal, 
+  onToggleComplete,
+  onDeleteEvent,
+  onOpenAddModal,
   onEditEvent
 }) {
   const [flippedIds, setFlippedIds] = useState(new Set());
   const [personFilter, setPersonFilter] = useState('ALL'); // 'ALL' | 'NIKITA' | 'MANZI' | 'BOTH'
+  // only Manzi/Nikita can write to Firestore, so hide edit controls for anyone else
+  const canEdit = currentUser === 'MANZI' || currentUser === 'NIKITA';
 
   const getEventPerson = (evt) => {
     if (evt.forWho) return evt.forWho;
@@ -36,13 +39,11 @@ export function ItineraryPlanner({
     return target < today;
   };
 
-  // Filter events by selected person filter
   const filteredEvents = events.filter(evt => {
     if (personFilter === 'ALL') return true;
     return getEventPerson(evt) === personFilter;
   });
 
-  // Group filtered events chronologically by date
   const groupedDateRanks = filteredEvents.reduce((acc, evt) => {
     const key = evt.date || '2026-10-15';
     if (!acc[key]) {
@@ -98,7 +99,6 @@ export function ItineraryPlanner({
     }}>
       <div className="container" style={{ width: '100%', boxSizing: 'border-box' }}>
         
-        {/* Section Header */}
         <div style={{
           display: 'flex',
           alignItems: 'flex-start',
@@ -118,110 +118,84 @@ export function ItineraryPlanner({
             </p>
           </div>
 
-          {/* Action Tools */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }} className="no-print">
-            <button
-              onClick={onOpenAddModal}
-              className="btn-primary btn-sm"
-              style={{ background: '#111111', color: '#ffffff', border: 'none', fontWeight: 700, padding: '0.6rem 1.35rem', borderRadius: '25px', fontSize: '0.85rem' }}
-            >
-              <Plus size={16} />
-              <span>Add Custom Event</span>
-            </button>
-          </div>
+          {canEdit && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }} className="no-print">
+              <button
+                onClick={onOpenAddModal}
+                className="btn-primary btn-sm"
+                style={{ background: '#111111', color: '#ffffff', border: 'none', fontWeight: 700, padding: '0.6rem 1.35rem', borderRadius: '25px', fontSize: '0.85rem' }}
+              >
+                <Plus size={16} />
+                <span>Add Custom Event</span>
+              </button>
+            </div>
+          )}
         </div>
 
-        {/* Person Filter Bar */}
         <div style={{
           display: 'flex',
           alignItems: 'center',
-          justifyContent: 'space-between',
           flexWrap: 'wrap',
           gap: '0.85rem',
-          marginBottom: '2rem',
-          background: '#f8f8f8',
-          border: '1px solid rgba(0, 0, 0, 0.12)',
-          padding: '0.85rem 1.25rem',
-          borderRadius: '16px'
+          marginBottom: '2rem'
         }} className="no-print">
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <span style={{ fontSize: '0.82rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: '#555555' }}>
-              Show Events &amp; Tasks For:
-            </span>
-          </div>
+          <span style={{ fontSize: '0.72rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#888888' }}>
+            Showing
+          </span>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
-            <button
-              onClick={() => setPersonFilter('ALL')}
-              style={{
-                padding: '0.45rem 1.1rem',
-                borderRadius: '20px',
-                fontSize: '0.82rem',
-                fontWeight: 700,
-                cursor: 'pointer',
-                border: personFilter === 'ALL' ? '2px solid #111111' : '1px solid rgba(0,0,0,0.15)',
-                background: personFilter === 'ALL' ? '#111111' : '#ffffff',
-                color: personFilter === 'ALL' ? '#ffffff' : '#333333',
-                transition: 'all 0.2s ease'
-              }}
-            >
-              All Combined ({events.length})
-            </button>
-
-            <button
-              onClick={() => setPersonFilter('NIKITA')}
-              style={{
-                padding: '0.45rem 1.1rem',
-                borderRadius: '20px',
-                fontSize: '0.82rem',
-                fontWeight: 700,
-                cursor: 'pointer',
-                border: personFilter === 'NIKITA' ? '2px solid #e08298' : '1px solid rgba(224, 130, 152, 0.4)',
-                background: personFilter === 'NIKITA' ? '#e08298' : '#fff5f7',
-                color: personFilter === 'NIKITA' ? '#ffffff' : '#9e3650',
-                transition: 'all 0.2s ease'
-              }}
-            >
-              Nikita Only ({events.filter(e => getEventPerson(e) === 'NIKITA').length})
-            </button>
-
-            <button
-              onClick={() => setPersonFilter('MANZI')}
-              style={{
-                padding: '0.45rem 1.1rem',
-                borderRadius: '20px',
-                fontSize: '0.82rem',
-                fontWeight: 700,
-                cursor: 'pointer',
-                border: personFilter === 'MANZI' ? '2px solid #8B5E3C' : '1px solid rgba(139, 94, 60, 0.4)',
-                background: personFilter === 'MANZI' ? '#8B5E3C' : '#faf4f0',
-                color: personFilter === 'MANZI' ? '#ffffff' : '#5c3920',
-                transition: 'all 0.2s ease'
-              }}
-            >
-              Manzi Only ({events.filter(e => getEventPerson(e) === 'MANZI').length})
-            </button>
-
-            <button
-              onClick={() => setPersonFilter('BOTH')}
-              style={{
-                padding: '0.45rem 1.1rem',
-                borderRadius: '20px',
-                fontSize: '0.82rem',
-                fontWeight: 700,
-                cursor: 'pointer',
-                border: personFilter === 'BOTH' ? '2px solid #588157' : '1px solid rgba(88, 129, 87, 0.4)',
-                background: personFilter === 'BOTH' ? '#588157' : '#f2f7f2',
-                color: personFilter === 'BOTH' ? '#ffffff' : '#2d472c',
-                transition: 'all 0.2s ease'
-              }}
-            >
-              Both ({events.filter(e => getEventPerson(e) === 'BOTH').length})
-            </button>
+          <div style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '0.2rem',
+            padding: '0.3rem',
+            background: '#f2f2f2',
+            borderRadius: '999px',
+            flexWrap: 'wrap'
+          }}>
+            {[
+              { key: 'ALL', label: 'All', count: events.length, color: '#111111' },
+              { key: 'NIKITA', label: 'Nikita', count: events.filter(e => getEventPerson(e) === 'NIKITA').length, color: '#e08298' },
+              { key: 'MANZI', label: 'Manzi', count: events.filter(e => getEventPerson(e) === 'MANZI').length, color: '#8B5E3C' },
+              { key: 'BOTH', label: 'Both', count: events.filter(e => getEventPerson(e) === 'BOTH').length, color: '#588157' },
+            ].map(f => {
+              const active = personFilter === f.key;
+              return (
+                <button
+                  key={f.key}
+                  onClick={() => setPersonFilter(f.key)}
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '0.4rem',
+                    padding: '0.4rem 0.9rem',
+                    borderRadius: '999px',
+                    fontSize: '0.8rem',
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    border: 'none',
+                    background: active ? f.color : 'transparent',
+                    color: active ? '#ffffff' : '#666666',
+                    boxShadow: active ? '0 2px 8px rgba(0,0,0,0.18)' : 'none',
+                    transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)'
+                  }}
+                >
+                  {f.label}
+                  <span style={{
+                    fontSize: '0.7rem',
+                    fontWeight: 700,
+                    padding: '0.05rem 0.4rem',
+                    borderRadius: '999px',
+                    background: active ? 'rgba(255,255,255,0.25)' : 'rgba(0,0,0,0.08)',
+                    color: active ? '#ffffff' : '#888888'
+                  }}>
+                    {f.count}
+                  </span>
+                </button>
+              );
+            })}
           </div>
         </div>
 
-        {/* MINIMALIST ROADLINE TIMELINE CONTAINER */}
         <div style={{ position: 'relative' }}>
 
           {events.length === 0 ? (
@@ -248,13 +222,10 @@ export function ItineraryPlanner({
                     paddingLeft: '1.75rem'
                   }}
                 >
-                  {/* Dynamic Animated Black & White Highway Road Track */}
                   <div className="bw-road-track" />
 
-                  {/* Creative Black & White Waypoint Node */}
                   <div className="bw-day-node" />
 
-                  {/* VINTAGE WRITING DAY RANK HEADER WITH MINIMALIST EDIT ICON */}
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1.5rem', marginTop: '0.2rem', flexWrap: 'wrap' }}>
                     <h3 style={{
                       fontSize: '2.1rem',
@@ -269,7 +240,7 @@ export function ItineraryPlanner({
                       {getDateRankTitle(dateKey, rankGroup.dayLabel)}
                     </h3>
 
-                    {onUpdateDayTitle && (
+                    {canEdit && onUpdateDayTitle && (
                       <button
                         onClick={() => {
                           const current = (dayTitles && dayTitles[dateKey]) || '';
@@ -299,7 +270,6 @@ export function ItineraryPlanner({
                     )}
                   </div>
 
-                  {/* EVENT CARDS GRID CONNECTED TO ROADLINE */}
                   <div style={{
                     display: 'grid',
                     gridTemplateColumns: 'repeat(auto-fill, minmax(270px, 1fr))',
@@ -313,19 +283,16 @@ export function ItineraryPlanner({
 
                       return (
                         <div key={evt.id} style={{ position: 'relative' }}>
-                          {/* Dynamic Black & White Horizontal Connector, Junction Dot & Card Diamond Node */}
                           <div className="bw-connector-line" />
                           <div className="bw-connector-dot" />
                           <div className="bw-card-diamond" />
                           
-                          {/* 3D FLIP CARD CONTAINER */}
                           <div 
                             className={`flip-card-container ${isFlipped ? 'flipped' : ''}`}
                             style={{ minHeight: '340px' }}
                           >
                             <div className="flip-card-inner">
                               
-                              {/* FRONT SIDE (SQUARE IMAGE + EDITORIAL DATE & CATCHY NAME) */}
                               <div
                                 className={`flip-card-front glass-card ${overdue ? 'is-overdue' : ''}`}
                                 onClick={() => toggleFlip(evt.id)}
@@ -340,12 +307,11 @@ export function ItineraryPlanner({
                                   border: evt.completed
                                     ? '1px solid rgba(88, 129, 87, 0.55)'
                                     : overdue
-                                    ? '1px solid rgba(214, 69, 69, 0.55)'
+                                    ? '1px solid rgba(201, 154, 154, 0.5)'
                                     : '1px solid var(--border-color)',
                                   overflow: 'hidden'
                                 }}
                               >
-                                {/* Square Image Banner */}
                                 <div style={{
                                   position: 'relative',
                                   width: '100%',
@@ -382,7 +348,6 @@ export function ItineraryPlanner({
                                     </div>
                                   )}
 
-                                  {/* High-End Editorial Date & Time Overlay */}
                                   <div style={{
                                     position: 'absolute',
                                     top: '0.85rem',
@@ -394,7 +359,7 @@ export function ItineraryPlanner({
                                     background: 'rgba(0, 0, 0, 0.55)',
                                     backdropFilter: 'blur(12px)',
                                     WebkitBackdropFilter: 'blur(12px)',
-                                    border: overdue ? '1px solid rgba(214, 69, 69, 0.6)' : '1px solid rgba(255, 255, 255, 0.22)',
+                                    border: overdue ? '1px solid rgba(201, 154, 154, 0.4)' : '1px solid rgba(255, 255, 255, 0.22)',
                                     borderRadius: '8px',
                                     padding: '0.4rem 0.75rem',
                                     color: '#ffffff',
@@ -421,46 +386,60 @@ export function ItineraryPlanner({
                                     }}>
                                       {evt.time}
                                     </span>
-                                    {overdue && (
-                                      <span style={{
-                                        display: 'inline-flex',
-                                        alignItems: 'center',
-                                        gap: '0.25rem',
-                                        marginTop: '0.35rem',
-                                        fontSize: '0.66rem',
-                                        fontWeight: 800,
-                                        color: '#ff8a8a',
-                                        letterSpacing: '0.08em',
-                                        textTransform: 'uppercase'
-                                      }}>
-                                        <AlertTriangle size={11} />
-                                        Overdue
-                                      </span>
-                                    )}
                                   </div>
 
-                                  {/* Person Name Badge Overlay on Front side (Only for Nikita or Manzi, hidden for Both) */}
-                                  {(targetWho === 'NIKITA' || targetWho === 'MANZI') && (
+                                  {(overdue || targetWho === 'NIKITA' || targetWho === 'MANZI') && (
                                     <div style={{
                                       position: 'absolute',
                                       top: '0.85rem',
                                       right: '0.85rem',
                                       zIndex: 3,
-                                      background: targetWho === 'NIKITA' ? '#e08298' : '#8B5E3C',
-                                      color: '#ffffff',
-                                      padding: '0.35rem 0.85rem',
-                                      borderRadius: '16px',
-                                      fontSize: '0.75rem',
-                                      fontWeight: 700,
-                                      letterSpacing: '0.04em',
-                                      boxShadow: '0 4px 14px rgba(0,0,0,0.35)',
-                                      border: '1px solid rgba(255, 255, 255, 0.3)'
+                                      display: 'flex',
+                                      flexDirection: 'column',
+                                      alignItems: 'flex-end',
+                                      gap: '0.4rem'
                                     }}>
-                                      {targetWho === 'NIKITA' ? 'Nikita' : 'Manzi'}
+                                      {(targetWho === 'NIKITA' || targetWho === 'MANZI') && (
+                                        <div style={{
+                                          background: targetWho === 'NIKITA' ? '#e08298' : '#8B5E3C',
+                                          color: '#ffffff',
+                                          padding: '0.35rem 0.85rem',
+                                          borderRadius: '16px',
+                                          fontSize: '0.75rem',
+                                          fontWeight: 700,
+                                          letterSpacing: '0.04em',
+                                          boxShadow: '0 4px 14px rgba(0,0,0,0.35)',
+                                          border: '1px solid rgba(255, 255, 255, 0.3)'
+                                        }}>
+                                          {targetWho === 'NIKITA' ? 'Nikita' : 'Manzi'}
+                                        </div>
+                                      )}
+
+                                      {overdue && (
+                                        <div style={{
+                                          display: 'inline-flex',
+                                          alignItems: 'center',
+                                          gap: '0.32rem',
+                                          background: 'rgba(74, 50, 48, 0.55)',
+                                          backdropFilter: 'blur(12px)',
+                                          WebkitBackdropFilter: 'blur(12px)',
+                                          border: '1px solid rgba(201, 154, 154, 0.45)',
+                                          borderRadius: '20px',
+                                          padding: '0.3rem 0.7rem',
+                                          fontSize: '0.66rem',
+                                          fontWeight: 700,
+                                          letterSpacing: '0.1em',
+                                          textTransform: 'uppercase',
+                                          color: '#e8c9c9',
+                                          boxShadow: '0 4px 14px rgba(0,0,0,0.25)'
+                                        }}>
+                                          <AlertTriangle size={11} />
+                                          Overdue
+                                        </div>
+                                      )}
                                     </div>
                                   )}
 
-                                  {/* Completed Stamp Overlay */}
                                   {evt.completed && (
                                     <div style={{
                                       position: 'absolute',
@@ -494,7 +473,6 @@ export function ItineraryPlanner({
                                     </div>
                                   )}
 
-                                  {/* Catchy Main Event Title Banner */}
                                   <div style={{
                                     position: 'absolute',
                                     bottom: '0.85rem',
@@ -536,7 +514,6 @@ export function ItineraryPlanner({
                                 </div>
                               </div>
 
-                              {/* BACK SIDE (DETAILS, NOTES, EDIT & DELETE ACTIONS) */}
                               <div 
                                 className="flip-card-back glass-card"
                                 style={{
@@ -567,7 +544,6 @@ export function ItineraryPlanner({
                                       {evt.title}
                                     </h3>
 
-                                    {/* Main Info: Time & Location */}
                                     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '0.85rem' }}>
                                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', fontWeight: 600, color: 'var(--text-primary)' }}>
                                         <Clock size={14} />
@@ -580,7 +556,6 @@ export function ItineraryPlanner({
                                       </div>
                                     </div>
 
-                                    {/* Main Info: Notes Description */}
                                     {evt.notes && (
                                       <div style={{
                                         fontSize: '0.82rem',
@@ -597,58 +572,58 @@ export function ItineraryPlanner({
                                     )}
                                   </div>
 
-                                  {/* Bottom Completion Checkbox & Direct Action Buttons */}
                                   <div style={{ padding: '1rem 1.25rem', borderTop: '1px solid rgba(0,0,0,0.1)', background: 'rgba(0,0,0,0.02)' }}>
                                     <button
-                                      onClick={() => onToggleComplete(evt.id)}
+                                      onClick={canEdit ? () => onToggleComplete(evt.id) : undefined}
                                       style={{
                                         display: 'flex',
                                         alignItems: 'center',
                                         gap: '0.5rem',
                                         background: 'none',
                                         border: 'none',
-                                        cursor: 'pointer',
+                                        cursor: canEdit ? 'pointer' : 'default',
                                         fontSize: '0.82rem',
-                                        color: evt.completed ? 'var(--text-muted)' : overdue ? '#d64545' : 'var(--text-primary)',
+                                        color: evt.completed ? 'var(--text-muted)' : overdue ? '#a8574a' : 'var(--text-primary)',
                                         fontWeight: 600
                                       }}
                                     >
                                       <div
                                         className={`custom-checkbox ${evt.completed ? 'checked' : ''}`}
-                                        style={overdue ? { borderColor: 'rgba(214, 69, 69, 0.6)' } : undefined}
+                                        style={overdue ? { borderColor: 'rgba(168, 87, 74, 0.55)' } : undefined}
                                       >
                                         {evt.completed && <CheckCircle2 size={14} />}
                                       </div>
                                       <span>
-                                        {evt.completed ? 'Marked Completed' : overdue ? 'Overdue — Mark Completed' : 'Mark Event Completed'}
+                                        {evt.completed ? 'Marked Completed' : overdue ? 'Overdue — Mark Completed' : canEdit ? 'Mark Event Completed' : 'Not yet completed'}
                                       </span>
                                     </button>
 
-                                    {/* Direct Edit & Delete Actions */}
-                                    <div style={{
-                                      display: 'flex',
-                                      alignItems: 'center',
-                                      gap: '0.6rem',
-                                      marginTop: '0.6rem',
-                                      paddingTop: '0.5rem',
-                                      borderTop: '1px dashed var(--border-color)'
-                                    }} className="no-print">
-                                      <button
-                                        onClick={() => { if (onEditEvent) onEditEvent(evt); }}
-                                        className="btn-primary btn-sm"
-                                        style={{ background: '#111111', color: '#ffffff', border: 'none', padding: '0.35rem 0.85rem', fontSize: '0.78rem', fontWeight: 700 }}
-                                      >
-                                        <Edit size={12} /> Edit Event Details
-                                      </button>
+                                    {canEdit && (
+                                      <div style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '0.6rem',
+                                        marginTop: '0.6rem',
+                                        paddingTop: '0.5rem',
+                                        borderTop: '1px dashed var(--border-color)'
+                                      }} className="no-print">
+                                        <button
+                                          onClick={() => { if (onEditEvent) onEditEvent(evt); }}
+                                          className="btn-primary btn-sm"
+                                          style={{ background: '#111111', color: '#ffffff', border: 'none', padding: '0.35rem 0.85rem', fontSize: '0.78rem', fontWeight: 700 }}
+                                        >
+                                          <Edit size={12} /> Edit Event Details
+                                        </button>
 
-                                      <button
-                                        onClick={() => onDeleteEvent(evt.id)}
-                                        className="btn-outline btn-sm"
-                                        style={{ padding: '0.25rem 0.65rem', fontSize: '0.78rem', color: '#ff6b6b', borderColor: 'rgba(255,107,107,0.3)', fontWeight: 700 }}
-                                      >
-                                        <Trash2 size={12} /> Delete
-                                      </button>
-                                    </div>
+                                        <button
+                                          onClick={() => onDeleteEvent(evt.id)}
+                                          className="btn-outline btn-sm"
+                                          style={{ padding: '0.25rem 0.65rem', fontSize: '0.78rem', color: '#ff6b6b', borderColor: 'rgba(255,107,107,0.3)', fontWeight: 700 }}
+                                        >
+                                          <Trash2 size={12} /> Delete
+                                        </button>
+                                      </div>
+                                    )}
                                   </div>
 
                                 </div>

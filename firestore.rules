@@ -1,0 +1,36 @@
+rules_version = '2';
+
+// Security rules for the Manzi & Nikita wedding site's Firestore database.
+//
+// wedding/shared         - itinerary, budget, guests, documents, shared todos.
+//                          Anyone visiting the site can read it (no sign-in
+//                          needed to browse the itinerary); only Manzi's and
+//                          Nikita's own Google accounts can write to it.
+// wedding/private_manzi  - Manzi's vows & personal notes. Only his account
+//                          can read or write it — not even Nikita's account.
+// wedding/private_nikita - Same, but only Nikita's account.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isCoupleAccount() {
+      return request.auth != null &&
+        (request.auth.token.email == 'rmanzi64@gmail.com' ||
+         request.auth.token.email == 'nikitaineza1@gmail.com');
+    }
+
+    match /wedding/shared {
+      allow read: if true;
+      allow write: if isCoupleAccount();
+    }
+
+    match /wedding/private_manzi {
+      allow read, write: if request.auth != null &&
+        request.auth.token.email == 'rmanzi64@gmail.com';
+    }
+
+    match /wedding/private_nikita {
+      allow read, write: if request.auth != null &&
+        request.auth.token.email == 'nikitaineza1@gmail.com';
+    }
+  }
+}

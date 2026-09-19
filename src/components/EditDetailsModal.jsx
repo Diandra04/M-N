@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
-import { X, Save, RotateCcw } from 'lucide-react';
+import { X, Save } from 'lucide-react';
 
 export function EditDetailsModal({ tripInfo, couple, onSave, onClose }) {
   const [formData, setFormData] = useState({
     partner1: couple.partner1 || 'M',
     partner2: couple.partner2 || 'N',
-    fullTitle: couple.fullTitle || 'M & N — 3rd Anniversary & Civil Celebration',
-    yearText: couple.yearText || '3rd Anniversary',
+    fullTitle: couple.fullTitle || 'Manzi & Nikita — Civil Wedding',
+    yearText: couple.yearText || 'Civil Wedding Celebration',
     subtitle: couple.subtitle || '',
     
     hotelName: tripInfo.hotelName || 'Airbnb on King Street West',
@@ -60,17 +60,17 @@ export function EditDetailsModal({ tripInfo, couple, onSave, onClose }) {
         
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '1rem' }}>
           <div>
-            <h3 style={{ fontSize: '1.5rem', fontFamily: 'var(--font-serif)' }}>Edit Anniversary & Trip Logistics</h3>
+            <h3 style={{ fontSize: '1.5rem', fontFamily: 'var(--font-serif)' }}>Edit Civil Wedding & Trip Logistics</h3>
             <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Update hotel, ceremony address, dates, and restaurant details</p>
           </div>
-          <button onClick={onClose} style={{ background: 'none', border: 'none', color: 'var(--text-primary)', cursor: 'pointer' }}>
+          <button onClick={onClose} className="modal-close-btn" style={{ background: 'none', border: 'none', color: 'var(--text-primary)', cursor: 'pointer' }}>
             <X size={20} />
           </button>
         </div>
 
         <form onSubmit={handleSubmit}>
           
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }} className="grid-2">
+          <div style={{ display: 'grid', gap: '1rem' }} className="grid-2">
             <div className="form-group">
               <label className="form-label">Partner 1 Name / Initial</label>
               <input 
@@ -105,7 +105,6 @@ export function EditDetailsModal({ tripInfo, couple, onSave, onClose }) {
             />
           </div>
 
-          {/* Section: Hotel & Stay */}
           <div style={{ margin: '1.5rem 0 1rem 0', borderTop: '1px solid var(--border-color)', paddingTop: '1rem' }}>
             <h4 style={{ fontSize: '1.1rem', marginBottom: '0.75rem', color: 'var(--text-accent)' }}>Hotel & Accommodations</h4>
             
@@ -130,7 +129,6 @@ export function EditDetailsModal({ tripInfo, couple, onSave, onClose }) {
             </div>
           </div>
 
-          {/* Section: Ceremony & Irembo */}
           <div style={{ margin: '1.5rem 0 1rem 0', borderTop: '1px solid var(--border-color)', paddingTop: '1rem' }}>
             <h4 style={{ fontSize: '1.1rem', marginBottom: '0.75rem', color: 'var(--text-accent)' }}>Ceremony & Irembo</h4>
 
@@ -165,7 +163,6 @@ export function EditDetailsModal({ tripInfo, couple, onSave, onClose }) {
             </div>
           </div>
 
-          {/* Section: Dinners & Travel Dates */}
           <div style={{ margin: '1.5rem 0 1rem 0', borderTop: '1px solid var(--border-color)', paddingTop: '1rem' }}>
             <h4 style={{ fontSize: '1.1rem', marginBottom: '0.75rem', color: 'var(--text-accent)' }}>Dinners & Travel Dates</h4>
 
@@ -180,7 +177,7 @@ export function EditDetailsModal({ tripInfo, couple, onSave, onClose }) {
             </div>
 
             <div className="form-group">
-              <label className="form-label">Special Anniversary Resto Dinner</label>
+              <label className="form-label">Special Resto Dinner</label>
               <input 
                 type="text" 
                 value={formData.restoDinner} 

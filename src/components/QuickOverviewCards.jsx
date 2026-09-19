@@ -32,7 +32,7 @@ export function QuickOverviewCards({ tripInfo, editMode, onOpenEditModal }) {
     },
     {
       icon: <Utensils size={20} color="var(--text-accent)" />,
-      title: 'Anniversary Dinners',
+      title: 'Celebration Dinners',
       primary: `Family: ${tripInfo.familyDinner}`,
       secondary: `Resto: ${tripInfo.restoDinner}`,
       badge: 'In Progress / Changes',

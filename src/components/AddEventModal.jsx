@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Upload, Image as ImageIcon, RotateCcw } from 'lucide-react';
+import { X, Upload, RotateCcw } from 'lucide-react';
 
 const DEFAULT_EVENT_IMAGE = '/images/backgroungImage.jpg';
 
@@ -60,7 +60,6 @@ export function AddEventModal({ isOpen, onClose, onSave, editingEvent, dayTitles
     }
   };
 
-  // Device File Upload Handler (Phone, iPad, Laptop Photo Library)
   const handleFileUpload = (e) => {
     const file = e.target.files[0];
     if (file) {
@@ -105,7 +104,7 @@ export function AddEventModal({ isOpen, onClose, onSave, editingEvent, dayTitles
           <h3 style={{ fontSize: '1.4rem', fontFamily: 'var(--font-vintage)', fontStyle: 'italic', color: '#000' }}>
             {editingEvent ? 'Edit Schedule Event' : 'Add New Itinerary Event'}
           </h3>
-          <button onClick={onClose} style={{ background: 'none', border: 'none', color: 'var(--text-primary)', cursor: 'pointer' }}>
+          <button onClick={onClose} className="modal-close-btn" style={{ background: 'none', border: 'none', color: 'var(--text-primary)', cursor: 'pointer' }}>
             <X size={20} />
           </button>
         </div>
@@ -181,7 +180,6 @@ export function AddEventModal({ isOpen, onClose, onSave, editingEvent, dayTitles
             />
           </div>
 
-          {/* Event Cover Photo Upload Section */}
           <div className="form-group">
             <label className="form-label" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <span>Event Photo Image</span>
@@ -191,7 +189,6 @@ export function AddEventModal({ isOpen, onClose, onSave, editingEvent, dayTitles
             </label>
 
             <div style={{ display: 'flex', gap: '0.85rem', alignItems: 'center' }}>
-              {/* Image Preview Thumbnail */}
               <div style={{
                 width: '64px',
                 height: '64px',

@@ -1,33 +1,34 @@
 import React, { useState } from 'react';
-import { 
-  Lock, Plus, Trash2, Key, ShieldCheck, CheckCircle2, FileSignature, 
-  Users, Calendar as CalendarIcon, DollarSign, Calculator, Folder, Upload, Download, FileText, Check, Heart, Eye, Save, Sparkles, Clock, MapPin, Send, XCircle
+import {
+  Lock, Plus, Trash2, Key, ShieldCheck, CheckCircle2, FileSignature,
+  Users, Calendar as CalendarIcon, DollarSign, Calculator, Folder, Upload, Download, FileText, Check, Heart, Save, Sparkles, Clock, MapPin, Send, XCircle, ArrowLeft
 } from 'lucide-react';
 
-export function SecretVault({ 
-  currentUser, 
-  onLogout, 
+export function SecretVault({
+  currentUser,
+  onLogout,
   events = [],
   sharedTodos = [],
-  manziSecretTodos = [],
-  nikitaSecretTodos = [],
-  manziSecretNotes = [],
-  nikitaSecretNotes = [],
-  manziVows = '',
-  nikitaVows = '',
+  vows = '',
+  personalNotes: personalNotesProp = '',
+  guestList: guestListProp = [],
+  budgetPlanner: budgetPlannerProp = { totalBudget: 10000, expenses: [] },
+  documentVault: documentVaultProp = [],
   meetingRequests = [],
   onCreateMeetingRequest,
   onRespondMeetingRequest,
   onSaveVows,
+  onSavePersonalNotes,
+  onSaveGuestList,
+  onSaveBudget,
+  onSaveDocuments,
   onAddTodo,
   onToggleTodo,
   onSignTodo,
   onDeleteTodo,
-  onAddSecretNote,
-  onDeleteSecretNote,
   onOpenLoginModal
 }) {
-  const [activeTab, setActiveTab] = useState('VOWS'); // 'VOWS' | 'MEETINGS' | 'GUESTS' | 'BUDGET' | 'DOCUMENTS' | 'SHARED'
+  const [activeTab, setActiveTab] = useState(null); // null | 'VOWS' | 'MEETINGS' | 'GUESTS' | 'BUDGET' | 'DOCUMENTS' | 'SHARED' | 'NOTES'
   const [dateFilter, setDateFilter] = useState('ALL');
   const [calendarPersonFilter, setCalendarPersonFilter] = useState('ALL'); // 'ALL' | 'NIKITA' | 'MANZI' | 'BOTH'
 
@@ -41,49 +42,86 @@ export function SecretVault({
     }, 50);
   };
 
-  // Local state for vow editing before saving
-  const [localManziVows, setLocalManziVows] = useState(manziVows);
-  const [localNikitaVows, setLocalNikitaVows] = useState(nikitaVows);
+  const handleBackToHub = () => {
+    setActiveTab(null);
+    setTimeout(() => {
+      const el = document.getElementById('vault-hub-top');
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    }, 50);
+  };
+
+  const [localVows, setLocalVows] = useState(vows);
   const [vowsSaveStatus, setVowsSaveStatus] = useState('');
 
-  // Keep local vows synced when props change
   React.useEffect(() => {
-    setLocalManziVows(manziVows);
-  }, [manziVows]);
+    setLocalVows(vows);
+  }, [vows]);
 
-  React.useEffect(() => {
-    setLocalNikitaVows(nikitaVows);
-  }, [nikitaVows]);
-
-  // Resto Guests & Contributions State
-  const [guestList, setGuestList] = useState([]);
+  const [guestList, setGuestListLocal] = useState(guestListProp);
+  React.useEffect(() => { setGuestListLocal(guestListProp); }, [guestListProp]);
+  const setGuestList = (updater) => {
+    setGuestListLocal(prev => {
+      const next = typeof updater === 'function' ? updater(prev) : updater;
+      if (onSaveGuestList) onSaveGuestList(next);
+      return next;
+    });
+  };
   const [newGuestName, setNewGuestName] = useState('');
   const [newGuestAmount, setNewGuestAmount] = useState('');
   const [newGuestRsvp, setNewGuestRsvp] = useState('Attending');
   const [newGuestNotes, setNewGuestNotes] = useState('');
+  const [isGuestFormOpen, setIsGuestFormOpen] = useState(false);
 
-  // Budget & Expense Calculator State
-  const [totalBudget, setTotalBudget] = useState(10000);
-  const [expenses, setExpenses] = useState([]);
+  const [totalBudget, setTotalBudgetLocal] = useState(budgetPlannerProp.totalBudget ?? 10000);
+  const [expenses, setExpensesLocal] = useState(budgetPlannerProp.expenses || []);
+  React.useEffect(() => {
+    setTotalBudgetLocal(budgetPlannerProp.totalBudget ?? 10000);
+    setExpensesLocal(budgetPlannerProp.expenses || []);
+  }, [budgetPlannerProp]);
+  const setTotalBudget = (updater) => {
+    setTotalBudgetLocal(prev => {
+      const next = typeof updater === 'function' ? updater(prev) : updater;
+      if (onSaveBudget) onSaveBudget({ totalBudget: next, expenses });
+      return next;
+    });
+  };
+  const setExpenses = (updater) => {
+    setExpensesLocal(prev => {
+      const next = typeof updater === 'function' ? updater(prev) : updater;
+      if (onSaveBudget) onSaveBudget({ totalBudget, expenses: next });
+      return next;
+    });
+  };
   const [newExpenseItem, setNewExpenseItem] = useState('');
   const [newExpenseCategory, setNewExpenseCategory] = useState('Dining');
   const [newExpenseEst, setNewExpenseEst] = useState('');
   const [newExpenseActual, setNewExpenseActual] = useState('');
+  const [isExpenseFormOpen, setIsExpenseFormOpen] = useState(false);
 
-  // Classified Document Vault State
   const [docCategoryFilter, setDocCategoryFilter] = useState('ALL');
-  const [documents, setDocuments] = useState([]);
+  const [documents, setDocumentsLocal] = useState(documentVaultProp);
+  React.useEffect(() => { setDocumentsLocal(documentVaultProp); }, [documentVaultProp]);
+  const setDocuments = (updater) => {
+    setDocumentsLocal(prev => {
+      const next = typeof updater === 'function' ? updater(prev) : updater;
+      if (onSaveDocuments) onSaveDocuments(next);
+      return next;
+    });
+  };
   const [newDocTitle, setNewDocTitle] = useState('');
   const [newDocCategory, setNewDocCategory] = useState('Legal & Marriage');
   const [newDocNotes, setNewDocNotes] = useState('');
   const [newDocFileName, setNewDocFileName] = useState('');
+  const [isDocFormOpen, setIsDocFormOpen] = useState(false);
 
-  // Meeting / Date Request Form State
   const [meetTitle, setMeetTitle] = useState('');
   const [meetDate, setMeetDate] = useState('2026-10-14');
   const [meetTime, setMeetTime] = useState('07:00 PM');
   const [meetLocation, setMeetLocation] = useState('King Street West Airbnb');
   const [meetNotes, setMeetNotes] = useState('');
+  const [isMeetingFormOpen, setIsMeetingFormOpen] = useState(false);
 
   const handleCreateMeetingSubmit = (e) => {
     e.preventDefault();
@@ -106,10 +144,10 @@ export function SecretVault({
     setMeetNotes('');
   };
 
-  // Add Todo & Note Form State
   const [newTask, setNewTask] = useState('');
   const [newDate, setNewDate] = useState('2026-10-15');
   const [newCategory, setNewCategory] = useState('Civil Ceremony');
+  const [isTaskFormOpen, setIsTaskFormOpen] = useState(false);
 
   const handleAddSharedTaskSubmit = (e) => {
     e.preventDefault();
@@ -135,26 +173,19 @@ export function SecretVault({
     setNewTask('');
   };
 
-  // Calendar View Mode State ('OCTOBER' | 'SEPTEMBER')
-  const [calendarViewMode, setCalendarViewMode] = useState('OCTOBER');
+  const [calendarViewMode, setCalendarViewMode] = useState('OCTOBER'); // 'OCTOBER' | 'SEPTEMBER'
 
-  // Personal Notes Workspace State
   const [notesViewMode, setNotesViewMode] = useState('EDITOR'); // 'EDITOR' | 'CHECKLIST'
 
-  const getNoteStorageKey = (user) => `mn_personal_notes_${user || 'GUEST'}_v4`;
-
-  const [personalNotes, setPersonalNotes] = useState(() => 
-    localStorage.getItem(getNoteStorageKey(currentUser)) || ''
-  );
+  const [personalNotes, setPersonalNotesLocal] = useState(personalNotesProp);
 
   React.useEffect(() => {
-    const saved = localStorage.getItem(getNoteStorageKey(currentUser));
-    setPersonalNotes(saved !== null ? saved : '');
-  }, [currentUser]);
+    setPersonalNotesLocal(personalNotesProp);
+  }, [personalNotesProp]);
 
   const handleSaveNoteContent = (val) => {
-    setPersonalNotes(val);
-    localStorage.setItem(getNoteStorageKey(currentUser), val);
+    setPersonalNotesLocal(val);
+    if (onSavePersonalNotes) onSavePersonalNotes(val);
   };
 
   const [newChecklistItem, setNewChecklistItem] = useState('');
@@ -201,7 +232,7 @@ export function SecretVault({
       let text = line;
       if (isChecked) text = line.replace(/^\[[xX]\]\s*/, '');
       else if (isUnchecked) text = line.replace(/^\[ \]\s*/, '');
-      else if (isBullet) text = line.replace(/^[•\-\*]\s*/, '');
+      else if (isBullet) text = line.replace(/^[•\-*]\s*/, '');
 
       return {
         originalIndex: idx,
@@ -258,13 +289,13 @@ export function SecretVault({
 
   const isManzi = currentUser === 'MANZI';
   const isNikita = currentUser === 'NIKITA';
+  // only Manzi/Nikita can write to the shared doc, so hide add/edit/delete for anyone else
+  const canEdit = isManzi || isNikita;
 
-  // Map events to date keys with robust date normalization (YYYY-MM-DD)
   const eventsByDate = events.reduce((acc, evt) => {
     if (!evt || !evt.date) return acc;
     let key = evt.date;
 
-    // Normalize format like "2026-10-5" or ISO strings -> "2026-10-05"
     if (key.includes('-')) {
       const parts = key.split('T')[0].split('-');
       if (parts.length === 3) {
@@ -280,28 +311,21 @@ export function SecretVault({
     return acc;
   }, {});
 
-  const privateTodos = isManzi ? manziSecretTodos : isNikita ? nikitaSecretTodos : [];
-
-  const filteredSharedTodos = dateFilter === 'ALL' 
+  const filteredSharedTodos = dateFilter === 'ALL'
     ? sharedTodos 
     : sharedTodos.filter(t => t.date === dateFilter);
 
-  // Financial Calculations
   const totalRestoCollected = guestList.reduce((sum, g) => sum + (g.contributed ? Number(g.amount || 0) : 0), 0);
   const totalAttendingGuests = guestList.filter(g => g.rsvp === 'Attending').length;
 
   const totalActualSpent = expenses.reduce((sum, e) => sum + Number(e.actual || 0), 0);
   const remainingBudgetLeft = totalBudget - totalActualSpent;
 
-  // Handlers
   const handleSaveVowsSubmit = (e) => {
     if (e) e.preventDefault();
-    if (isManzi) {
-      if (onSaveVows) onSaveVows(localManziVows);
-      setVowsSaveStatus("Manzi's vows saved securely!");
-    } else if (isNikita) {
-      if (onSaveVows) onSaveVows(localNikitaVows);
-      setVowsSaveStatus("Nikita's vows saved securely!");
+    if (isManzi || isNikita) {
+      if (onSaveVows) onSaveVows(localVows);
+      setVowsSaveStatus(`${isManzi ? "Manzi's" : "Nikita's"} vows saved securely!`);
     }
     setTimeout(() => setVowsSaveStatus(''), 4000);
   };
@@ -334,8 +358,18 @@ export function SecretVault({
     }));
   };
 
+  const handleChangeGuestRsvp = (guestId, rsvp) => {
+    setGuestList(prev => prev.map(g => (g.id === guestId ? { ...g, rsvp } : g)));
+  };
+
   const handleDeleteGuest = (guestId) => {
     setGuestList(prev => prev.filter(g => g.id !== guestId));
+  };
+
+  const getRsvpColors = (rsvp) => {
+    if (rsvp === 'Attending') return { color: '#a3c9a8', bg: 'rgba(163, 201, 168, 0.12)', border: 'rgba(163, 201, 168, 0.3)' };
+    if (rsvp === 'Declined') return { color: '#c99a9a', bg: 'rgba(201, 154, 154, 0.12)', border: 'rgba(201, 154, 154, 0.3)' };
+    return { color: '#d9b98a', bg: 'rgba(217, 185, 138, 0.12)', border: 'rgba(217, 185, 138, 0.3)' };
   };
 
   const handleAddExpense = (e) => {
@@ -391,7 +425,6 @@ export function SecretVault({
     setDocuments(prev => prev.filter(d => d.id !== docId));
   };
 
-  // Helper function for event theme color tags
   const getEventTheme = (evt) => {
     const who = evt.forWho || (
       evt.title?.toLowerCase().includes('nikita') || evt.title?.toLowerCase().includes('nail') || evt.title?.toLowerCase().includes('hair') || evt.notes?.toLowerCase().includes('nikita') ? 'NIKITA' :
@@ -423,7 +456,6 @@ export function SecretVault({
     }
   };
 
-  // Build September & October 2026 Dual Calendar Grid
   const renderMonthsCalendar = () => {
     const monthConfigs = [
       {
@@ -455,10 +487,8 @@ export function SecretVault({
         border: '1px solid rgba(255, 255, 255, 0.2)',
         borderRadius: '20px',
         padding: '1.5rem',
-        marginTop: '3rem',
         boxShadow: '0 16px 40px rgba(0,0,0,0.6)'
       }}>
-        {/* Calendar Main Section Title */}
         <div style={{
           display: 'flex',
           alignItems: 'center',
@@ -481,7 +511,6 @@ export function SecretVault({
             </div>
           </div>
 
-          {/* Month Switcher Tabs */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
             <div style={{
               display: 'inline-flex',
@@ -536,108 +565,56 @@ export function SecretVault({
           </div>
         </div>
 
-        {/* Calendar Person Filter & Color Legend Bar */}
         <div style={{
           display: 'flex',
           alignItems: 'center',
-          justifyContent: 'space-between',
-          gap: '1rem',
+          gap: '0.85rem',
           flexWrap: 'wrap',
-          fontSize: '0.78rem',
-          fontWeight: 600,
-          background: '#18181c',
-          padding: '0.6rem 1rem',
-          borderRadius: '12px',
-          border: '1px solid rgba(255, 255, 255, 0.15)',
           marginBottom: '1.25rem'
         }}>
-          <span style={{ color: 'rgba(255, 255, 255, 0.6)', textTransform: 'uppercase', letterSpacing: '0.06em', fontSize: '0.68rem' }}>
-            Filter Monthly Calendar:
+          <span style={{ color: 'rgba(255, 255, 255, 0.45)', textTransform: 'uppercase', letterSpacing: '0.08em', fontSize: '0.68rem', fontWeight: 700 }}>
+            Filter
           </span>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
-            <button
-              onClick={() => setCalendarPersonFilter('ALL')}
-              style={{
-                padding: '0.3rem 0.75rem',
-                borderRadius: '14px',
-                fontSize: '0.75rem',
-                fontWeight: 700,
-                cursor: 'pointer',
-                background: calendarPersonFilter === 'ALL' ? '#ffffff' : 'transparent',
-                color: calendarPersonFilter === 'ALL' ? '#000000' : '#ffffff',
-                border: '1px solid rgba(255,255,255,0.3)',
-                transition: 'all 0.2s ease'
-              }}
-            >
-              All Combined
-            </button>
-
-            <button
-              onClick={() => setCalendarPersonFilter('NIKITA')}
-              style={{
-                padding: '0.3rem 0.75rem',
-                borderRadius: '14px',
-                fontSize: '0.75rem',
-                fontWeight: 700,
-                cursor: 'pointer',
-                background: calendarPersonFilter === 'NIKITA' ? '#e08298' : 'rgba(224, 130, 152, 0.15)',
-                color: '#ffffff',
-                border: '1px solid #e08298',
-                transition: 'all 0.2s ease',
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '0.35rem'
-              }}
-            >
-              <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#e08298', display: 'inline-block' }} />
-              Nikita Only
-            </button>
-
-            <button
-              onClick={() => setCalendarPersonFilter('MANZI')}
-              style={{
-                padding: '0.3rem 0.75rem',
-                borderRadius: '14px',
-                fontSize: '0.75rem',
-                fontWeight: 700,
-                cursor: 'pointer',
-                background: calendarPersonFilter === 'MANZI' ? '#8B5E3C' : 'rgba(139, 94, 60, 0.15)',
-                color: '#ffffff',
-                border: '1px solid #8B5E3C',
-                transition: 'all 0.2s ease',
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '0.35rem'
-              }}
-            >
-              <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#8B5E3C', display: 'inline-block' }} />
-              Manzi Only
-            </button>
-
-            <button
-              onClick={() => setCalendarPersonFilter('BOTH')}
-              style={{
-                padding: '0.3rem 0.75rem',
-                borderRadius: '14px',
-                fontSize: '0.75rem',
-                fontWeight: 700,
-                cursor: 'pointer',
-                background: calendarPersonFilter === 'BOTH' ? '#588157' : 'rgba(88, 129, 87, 0.15)',
-                color: '#ffffff',
-                border: '1px solid #588157',
-                transition: 'all 0.2s ease',
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '0.35rem'
-              }}
-            >
-              <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#588157', display: 'inline-block' }} />
-              Both
-            </button>
+          <div style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '0.2rem',
+            padding: '0.25rem',
+            background: 'rgba(255,255,255,0.06)',
+            borderRadius: '999px',
+            flexWrap: 'wrap'
+          }}>
+            {[
+              { key: 'ALL', label: 'All', color: '#ffffff', textColor: '#000000' },
+              { key: 'NIKITA', label: 'Nikita', color: '#e08298', textColor: '#ffffff' },
+              { key: 'MANZI', label: 'Manzi', color: '#8B5E3C', textColor: '#ffffff' },
+              { key: 'BOTH', label: 'Both', color: '#588157', textColor: '#ffffff' },
+            ].map(f => {
+              const active = calendarPersonFilter === f.key;
+              return (
+                <button
+                  key={f.key}
+                  onClick={() => setCalendarPersonFilter(f.key)}
+                  style={{
+                    padding: '0.35rem 0.85rem',
+                    borderRadius: '999px',
+                    fontSize: '0.74rem',
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    border: 'none',
+                    background: active ? f.color : 'transparent',
+                    color: active ? f.textColor : 'rgba(255,255,255,0.65)',
+                    boxShadow: active ? '0 2px 10px rgba(0,0,0,0.35)' : 'none',
+                    transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)'
+                  }}
+                >
+                  {f.label}
+                </button>
+              );
+            })}
           </div>
         </div>
 
-        {/* Render Selected Month */}
         <div style={{
           display: 'flex',
           flexDirection: 'column',
@@ -678,7 +655,6 @@ export function SecretVault({
                 border: '1px solid rgba(255, 255, 255, 0.12)',
                 boxSizing: 'border-box'
               }}>
-                {/* Month Title Header */}
                 <div style={{
                   display: 'flex',
                   alignItems: 'baseline',
@@ -702,8 +678,7 @@ export function SecretVault({
                   </span>
                 </div>
 
-                {/* Days of Week Header */}
-                <div style={{
+                <div className="vault-cal-grid" style={{
                   display: 'grid',
                   gridTemplateColumns: 'repeat(7, 1fr)',
                   gap: '0.35rem',
@@ -724,22 +699,24 @@ export function SecretVault({
                   <div>Sa</div>
                 </div>
 
-                {/* Calendar Grid Cells */}
-                <div style={{
+                <div className="vault-cal-grid" style={{
                   display: 'grid',
                   gridTemplateColumns: 'repeat(7, 1fr)',
                   gap: '0.35rem'
                 }}>
                   {padding.map((_, idx) => (
-                    <div key={`pad-${cfg.yearMonthKey}-${idx}`} style={{ minHeight: '65px', background: 'transparent' }} />
+                    <div key={`pad-${cfg.yearMonthKey}-${idx}`} className="vault-cal-cell" style={{ minHeight: '65px', minWidth: 0, background: 'transparent' }} />
                   ))}
 
                   {days.map((d) => (
                     <div
                       key={d.dateKey}
                       onClick={() => setDateFilter(d.isSelected ? 'ALL' : d.dateKey)}
+                      className="vault-cal-cell"
                       style={{
                         minHeight: '65px',
+                        minWidth: 0,
+                        overflow: 'hidden',
                         borderRadius: '9px',
                         border: d.isSelected 
                           ? '2px solid #ffffff' 
@@ -763,7 +740,6 @@ export function SecretVault({
                         boxSizing: 'border-box'
                       }}
                     >
-                      {/* Day Number Header */}
                       <div style={{
                         display: 'flex',
                         alignItems: 'center',
@@ -785,7 +761,6 @@ export function SecretVault({
                         )}
                       </div>
 
-                      {/* Event Indicators */}
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '0.15rem', overflow: 'hidden' }}>
                         {d.dayEvents.map((evt) => {
                           const theme = getEventTheme(evt);
@@ -842,8 +817,7 @@ export function SecretVault({
     }}>
       <div className="container" style={{ width: '100%', boxSizing: 'border-box' }}>
         
-        {/* Main Glassmorphism Hub Container */}
-        <div style={{
+        <div className="vault-hub" style={{
           background: 'rgba(18, 18, 20, 0.95)',
           backdropFilter: 'blur(20px)',
           WebkitBackdropFilter: 'blur(20px)',
@@ -855,8 +829,7 @@ export function SecretVault({
           boxSizing: 'border-box'
         }}>
           
-          {/* Main Title & Spouse Profile Header */}
-          <div style={{
+          <div id="vault-hub-top" style={{
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
@@ -892,20 +865,26 @@ export function SecretVault({
                   <ShieldCheck size={16} />
                   Profile: {isManzi ? 'Manzi' : 'Nikita'}
                 </span>
+                <button
+                  onClick={onLogout}
+                  className="btn-outline btn-sm"
+                  style={{ borderColor: 'rgba(255,255,255,0.25)', color: '#ffffff' }}
+                >
+                  Sign Out
+                </button>
               </div>
             )}
           </div>
 
-          {/* PROMINENT FEATURE CARDS GRID (UNISEX & DISTINCT COLOR PALETTE) */}
+          {!activeTab && (
           <div style={{
             display: 'grid',
             gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
             gap: '1.1rem',
             marginBottom: '2.5rem'
           }}>
-            {/* Card 1: Secret Wedding Vows (Velvet Crimson Red) */}
             <div 
-              onClick={() => setActiveTab('VOWS')}
+              onClick={() => handleTabSelect('VOWS')}
               style={{
                 background: activeTab === 'VOWS' 
                   ? 'linear-gradient(135deg, #361417 0%, #541D22 100%)' 
@@ -949,13 +928,12 @@ export function SecretVault({
               </div>
 
               <div style={{ fontSize: '0.75rem', fontWeight: 700, marginTop: '0.85rem', borderTop: '1px solid rgba(239, 83, 80, 0.25)', paddingTop: '0.5rem', color: '#FFCDD2' }}>
-                {isManzi ? "Manzi's Vows Unlocked" : isNikita ? "Nikita's Vows Unlocked" : "Unlock Vows with Passcode"} →
+                {isManzi ? "Manzi's Vows Unlocked" : isNikita ? "Nikita's Vows Unlocked" : "Sign In to Unlock"} →
               </div>
             </div>
 
-            {/* Card 2: Resto Money & Guests (Golden Amber / Warm Bronze - Non Green) */}
             <div 
-              onClick={() => setActiveTab('GUESTS')}
+              onClick={() => handleTabSelect('GUESTS')}
               style={{
                 background: activeTab === 'GUESTS' 
                   ? 'linear-gradient(135deg, #332714 0%, #523D1B 100%)' 
@@ -1003,9 +981,8 @@ export function SecretVault({
               </div>
             </div>
 
-            {/* Card 3: Budget & Expense Calculator (Royal Amethyst Purple) */}
             <div 
-              onClick={() => setActiveTab('BUDGET')}
+              onClick={() => handleTabSelect('BUDGET')}
               style={{
                 background: activeTab === 'BUDGET' 
                   ? 'linear-gradient(135deg, #2B1D3A 0%, #442B5C 100%)' 
@@ -1053,9 +1030,8 @@ export function SecretVault({
               </div>
             </div>
 
-            {/* Card 4: Digital Dossier & Files (Sapphire Blue) */}
             <div 
-              onClick={() => setActiveTab('DOCUMENTS')}
+              onClick={() => handleTabSelect('DOCUMENTS')}
               style={{
                 background: activeTab === 'DOCUMENTS' 
                   ? 'linear-gradient(135deg, #142036 0%, #1D3254 100%)' 
@@ -1103,9 +1079,8 @@ export function SecretVault({
               </div>
             </div>
 
-            {/* Card 5: Shared Joint Tasks (Electric Cyan) */}
             <div 
-              onClick={() => setActiveTab('SHARED')}
+              onClick={() => handleTabSelect('SHARED')}
               style={{
                 background: activeTab === 'SHARED' 
                   ? 'linear-gradient(135deg, #122B32 0%, #1A4652 100%)' 
@@ -1153,9 +1128,8 @@ export function SecretVault({
               </div>
             </div>
 
-            {/* Card 6: Date & Meeting Invites (Emerald / Rose) */}
             <div 
-              onClick={() => setActiveTab('MEETINGS')}
+              onClick={() => handleTabSelect('MEETINGS')}
               style={{
                 background: activeTab === 'MEETINGS' 
                   ? 'linear-gradient(135deg, #1C2E26 0%, #2A483B 100%)' 
@@ -1203,9 +1177,8 @@ export function SecretVault({
               </div>
             </div>
 
-            {/* Card 7: Personal Note Pad (Warm Sunset Gold) */}
             <div 
-              onClick={() => setActiveTab('NOTES')}
+              onClick={() => handleTabSelect('NOTES')}
               style={{
                 background: activeTab === 'NOTES' 
                   ? 'linear-gradient(135deg, #3A2510 0%, #5C3A16 100%)' 
@@ -1252,12 +1225,69 @@ export function SecretVault({
                 Auto-saved to {currentUser || 'Guest'} →
               </div>
             </div>
-          </div>
 
-          {/* ACTIVE TOOL FEATURE VIEW */}
-          <div style={{ background: '#121214', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '20px', padding: '2rem' }}>
-            
-            {/* FEATURE VIEW 1: SECRET WEDDING VOWS VAULT */}
+            <div
+              onClick={() => handleTabSelect('CALENDAR')}
+              style={{
+                background: activeTab === 'CALENDAR'
+                  ? 'linear-gradient(135deg, #232A4D 0%, #333D6E 100%)'
+                  : 'linear-gradient(135deg, #171B30 0%, #0F1220 100%)',
+                color: '#ffffff',
+                border: activeTab === 'CALENDAR' ? '2px solid #7986CB' : '1px solid rgba(121, 134, 203, 0.35)',
+                borderRadius: '18px',
+                padding: '1.25rem',
+                cursor: 'pointer',
+                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                boxShadow: activeTab === 'CALENDAR' ? '0 10px 28px rgba(121, 134, 203, 0.3)' : '0 4px 12px rgba(0,0,0,0.2)',
+                transform: activeTab === 'CALENDAR' ? 'translateY(-3px)' : 'none',
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'space-between',
+                minHeight: '135px'
+              }}
+            >
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <CalendarIcon size={22} style={{ color: '#9FA8DA' }} />
+                  <span style={{
+                    fontSize: '0.65rem',
+                    fontWeight: 800,
+                    padding: '0.2rem 0.6rem',
+                    borderRadius: '12px',
+                    background: '#3F51B5',
+                    color: '#ffffff',
+                    letterSpacing: '0.05em',
+                    textTransform: 'uppercase'
+                  }}>
+                    CALENDAR
+                  </span>
+                </div>
+                <h3 style={{ fontSize: '1.15rem', fontWeight: 700, margin: '0.65rem 0 0.2rem 0', fontFamily: 'var(--font-serif)', fontStyle: 'normal', color: '#ffffff' }}>
+                  Civil Wedding Calendar
+                </h3>
+                <p style={{ fontSize: '0.78rem', margin: 0, color: 'rgba(255, 255, 255, 0.75)' }}>
+                  Full Sept &amp; Oct 2026 monthly view
+                </p>
+              </div>
+
+              <div style={{ fontSize: '0.75rem', fontWeight: 700, marginTop: '0.85rem', borderTop: '1px solid rgba(121, 134, 203, 0.25)', paddingTop: '0.5rem', color: '#C5CAE9' }}>
+                {events.length} scheduled events →
+              </div>
+            </div>
+          </div>
+          )}
+
+          {activeTab && (
+          <div id="active-hub-tool" className="vault-panel" style={{ background: '#121214', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '20px', padding: '2rem' }}>
+
+            <button
+              onClick={handleBackToHub}
+              className="btn-outline btn-sm"
+              style={{ marginBottom: '1.5rem', borderColor: 'rgba(255,255,255,0.25)', color: '#ffffff' }}
+            >
+              <ArrowLeft size={14} /> Back to Hub
+            </button>
+
             {activeTab === 'VOWS' && (
               <div>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem', borderBottom: '1px solid rgba(255,255,255,0.12)', paddingBottom: '1rem', flexWrap: 'wrap', gap: '0.75rem' }}>
@@ -1278,7 +1308,6 @@ export function SecretVault({
                 </div>
 
                 {isManzi ? (
-                  /* MANZI ONLY VIEW */
                   <div style={{ maxWidth: '680px', margin: '0 auto' }}>
                     <div style={{
                       background: '#18181c',
@@ -1304,8 +1333,8 @@ export function SecretVault({
                           Write & refine your private vows for Nikita:
                         </label>
                         <textarea
-                          value={localManziVows}
-                          onChange={(e) => setLocalManziVows(e.target.value)}
+                          value={localVows}
+                          onChange={(e) => setLocalVows(e.target.value)}
                           placeholder="Write your heartfelt vows here..."
                           rows={9}
                           style={{
@@ -1326,7 +1355,7 @@ export function SecretVault({
 
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.75rem' }}>
                           <span style={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.5)' }}>
-                            {localManziVows.trim().split(/\s+/).filter(Boolean).length} words • Private to Manzi (Sealed from Nikita)
+                            {localVows.trim().split(/\s+/).filter(Boolean).length} words • Private to Manzi (Sealed from Nikita)
                           </span>
                           <button type="submit" className="btn-primary btn-sm" style={{ background: '#ffffff', color: '#000000', border: 'none', fontWeight: 700, padding: '0.55rem 1.35rem' }}>
                             <Save size={14} /> Save Manzi's Vows
@@ -1336,7 +1365,6 @@ export function SecretVault({
                     </div>
                   </div>
                 ) : isNikita ? (
-                  /* NIKITA ONLY VIEW */
                   <div style={{ maxWidth: '680px', margin: '0 auto' }}>
                     <div style={{
                       background: '#18181c',
@@ -1362,8 +1390,8 @@ export function SecretVault({
                           Write & refine your private vows for Manzi:
                         </label>
                         <textarea
-                          value={localNikitaVows}
-                          onChange={(e) => setLocalNikitaVows(e.target.value)}
+                          value={localVows}
+                          onChange={(e) => setLocalVows(e.target.value)}
                           placeholder="Write your heartfelt vows here..."
                           rows={9}
                           style={{
@@ -1384,7 +1412,7 @@ export function SecretVault({
 
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.75rem' }}>
                           <span style={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.5)' }}>
-                            {localNikitaVows.trim().split(/\s+/).filter(Boolean).length} words • Private to Nikita (Sealed from Manzi)
+                            {localVows.trim().split(/\s+/).filter(Boolean).length} words • Private to Nikita (Sealed from Manzi)
                           </span>
                           <button type="submit" className="btn-primary btn-sm" style={{ background: '#ffffff', color: '#000000', border: 'none', fontWeight: 700, padding: '0.55rem 1.35rem' }}>
                             <Save size={14} /> Save Nikita's Vows
@@ -1394,7 +1422,6 @@ export function SecretVault({
                     </div>
                   </div>
                 ) : (
-                  /* GUEST / NOT SIGNED IN VIEW */
                   <div style={{ maxWidth: '520px', margin: '0 auto', textAlign: 'center', padding: '2.5rem 1.5rem', background: '#18181c', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '20px' }}>
                     <div style={{
                       width: '64px',
@@ -1413,28 +1440,26 @@ export function SecretVault({
                       Secret Wedding Vows
                     </h4>
                     <p style={{ fontSize: '0.88rem', color: 'rgba(255, 255, 255, 0.7)', lineHeight: 1.5, marginBottom: '1.5rem' }}>
-                      Enter your 4-digit PIN to view and edit your private wedding vows. Vows remain strictly private until the ceremony!
+                      Sign in to view and edit your private wedding vows. Vows remain strictly private until the ceremony!
                     </p>
-                    <button 
-                      onClick={() => onOpenLoginModal(isManzi ? 'MANZI' : 'NIKITA')} 
-                      className="btn-primary" 
+                    <button
+                      onClick={() => onOpenLoginModal()}
+                      className="btn-primary"
                       style={{ background: '#ffffff', color: '#000000', border: 'none', fontWeight: 700, padding: '0.75rem 1.75rem', borderRadius: '30px', fontSize: '0.95rem' }}
                     >
-                      <Key size={16} /> Unlock Vows with Passcode
+                      <Key size={16} /> Sign In
                     </button>
                   </div>
                 )}
               </div>
             )}
 
-            {/* FEATURE VIEW 2: RESTO MONEY & GUEST LIST TRACKER */}
             {activeTab === 'GUESTS' && (
               <div>
                 <h3 style={{ fontSize: '1.6rem', fontFamily: 'var(--font-serif)', fontStyle: 'normal', color: '#ffffff', marginBottom: '1.25rem', fontWeight: 600 }}>
                   Resto Money & Guest List Tracker
                 </h3>
 
-                {/* Summary Counter Bar */}
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem', marginBottom: '1.75rem' }}>
                   <div style={{ background: '#18181c', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '14px', padding: '1.25rem' }}>
                     <div style={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.6)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
@@ -1464,11 +1489,25 @@ export function SecretVault({
                   </div>
                 </div>
 
-                {/* Form: Add Guest & Resto Money */}
+                {!canEdit ? null : !isGuestFormOpen ? (
+                  <button
+                    type="button"
+                    onClick={() => setIsGuestFormOpen(true)}
+                    className="btn-outline btn-sm"
+                    style={{ marginBottom: '1.75rem', borderColor: 'rgba(255,255,255,0.25)', color: '#ffffff' }}
+                  >
+                    <Plus size={14} /> Add Guest
+                  </button>
+                ) : (
                 <form onSubmit={handleAddGuest} style={{ background: '#18181c', padding: '1.25rem', borderRadius: '14px', border: '1px solid rgba(255,255,255,0.15)', marginBottom: '1.75rem' }}>
-                  <h4 style={{ fontSize: '0.92rem', fontWeight: 700, color: '#ffffff', textTransform: 'uppercase', marginBottom: '0.85rem' }}>
-                    + Add Guest & Restaurant Money Contribution
-                  </h4>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.85rem' }}>
+                    <h4 style={{ fontSize: '0.92rem', fontWeight: 700, color: '#ffffff', textTransform: 'uppercase', margin: 0 }}>
+                      Add Guest
+                    </h4>
+                    <button type="button" onClick={() => setIsGuestFormOpen(false)} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.6)', cursor: 'pointer', display: 'flex' }}>
+                      <XCircle size={18} />
+                    </button>
+                  </div>
 
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '0.75rem', alignItems: 'end' }}>
                     <div>
@@ -1527,8 +1566,8 @@ export function SecretVault({
                     </button>
                   </div>
                 </form>
+                )}
 
-                {/* Guest List Table */}
                 <div style={{ background: '#18181c', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '14px', overflowX: 'auto' }}>
                   <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.88rem' }}>
                     <thead>
@@ -1553,33 +1592,53 @@ export function SecretVault({
                         <tr key={g.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
                           <td style={{ padding: '0.85rem 1rem', fontWeight: 600 }}>{g.name}</td>
                           <td style={{ padding: '0.85rem 1rem' }}>
-                            <span style={{ padding: '0.2rem 0.5rem', borderRadius: '12px', fontSize: '0.72rem', fontWeight: 700, background: 'rgba(255,255,255,0.1)', color: '#ffffff' }}>
-                              {g.rsvp}
-                            </span>
+                            <select
+                              value={g.rsvp}
+                              onChange={(e) => handleChangeGuestRsvp(g.id, e.target.value)}
+                              disabled={!canEdit}
+                              style={{
+                                padding: '0.25rem 1.6rem 0.25rem 0.65rem',
+                                borderRadius: '20px',
+                                fontSize: '0.72rem',
+                                fontWeight: 700,
+                                cursor: canEdit ? 'pointer' : 'default',
+                                border: `1px solid ${getRsvpColors(g.rsvp).border}`,
+                                background: getRsvpColors(g.rsvp).bg,
+                                color: getRsvpColors(g.rsvp).color,
+                                appearance: 'auto'
+                              }}
+                            >
+                              <option value="Attending">Attending</option>
+                              <option value="Pending">Pending</option>
+                              <option value="Declined">Declined</option>
+                            </select>
                           </td>
                           <td style={{ padding: '0.85rem 1rem', fontWeight: 700 }}>${g.amount || 0}</td>
                           <td style={{ padding: '0.85rem 1rem' }}>
                             <button
                               onClick={() => handleToggleGuestContribution(g.id)}
+                              disabled={!canEdit}
                               style={{
                                 padding: '0.25rem 0.65rem',
                                 borderRadius: '20px',
-                                fontSize: '0.75rem',
+                                fontSize: '0.72rem',
                                 fontWeight: 700,
-                                cursor: 'pointer',
-                                border: 'none',
-                                background: g.contributed ? '#ffffff' : 'rgba(255,255,255,0.15)',
-                                color: g.contributed ? '#000000' : '#ffffff'
+                                cursor: canEdit ? 'pointer' : 'default',
+                                border: `1px solid ${g.contributed ? 'rgba(163, 201, 168, 0.3)' : 'rgba(201, 154, 154, 0.3)'}`,
+                                background: g.contributed ? 'rgba(163, 201, 168, 0.12)' : 'rgba(201, 154, 154, 0.12)',
+                                color: g.contributed ? '#a3c9a8' : '#c99a9a'
                               }}
                             >
-                              {g.contributed ? 'Paid' : 'Pending'}
+                              {g.contributed ? 'Paid' : 'Not Paid'}
                             </button>
                           </td>
                           <td style={{ padding: '0.85rem 1rem', color: 'rgba(255,255,255,0.7)', fontSize: '0.82rem' }}>{g.notes}</td>
                           <td style={{ padding: '0.85rem 1rem', textAlign: 'right' }}>
-                            <button onClick={() => handleDeleteGuest(g.id)} style={{ background: 'none', border: 'none', color: '#ff6b6b', cursor: 'pointer' }}>
-                              <Trash2 size={14} />
-                            </button>
+                            {canEdit && (
+                              <button onClick={() => handleDeleteGuest(g.id)} style={{ background: 'none', border: 'none', color: '#ff6b6b', cursor: 'pointer' }}>
+                                <Trash2 size={14} />
+                              </button>
+                            )}
                           </td>
                         </tr>
                       )))}
@@ -1589,14 +1648,12 @@ export function SecretVault({
               </div>
             )}
 
-            {/* FEATURE VIEW 3: BUDGET & EXPENSE CALCULATOR */}
             {activeTab === 'BUDGET' && (
               <div>
                 <h3 style={{ fontSize: '1.6rem', fontFamily: 'var(--font-serif)', fontStyle: 'normal', color: '#ffffff', marginBottom: '1.25rem', fontWeight: 600 }}>
                   Budget & Expense Calculator
                 </h3>
 
-                {/* Calculations Summary Bar */}
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem', marginBottom: '1.75rem' }}>
                   <div style={{ background: '#18181c', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '14px', padding: '1.25rem' }}>
                     <div style={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.6)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
@@ -1632,11 +1689,25 @@ export function SecretVault({
                   </div>
                 </div>
 
-                {/* Form: Add Budget Line Item */}
+                {!canEdit ? null : !isExpenseFormOpen ? (
+                  <button
+                    type="button"
+                    onClick={() => setIsExpenseFormOpen(true)}
+                    className="btn-outline btn-sm"
+                    style={{ marginBottom: '1.75rem', borderColor: 'rgba(255,255,255,0.25)', color: '#ffffff' }}
+                  >
+                    <Plus size={14} /> Add Expense
+                  </button>
+                ) : (
                 <form onSubmit={handleAddExpense} style={{ background: '#18181c', padding: '1.25rem', borderRadius: '14px', border: '1px solid rgba(255,255,255,0.15)', marginBottom: '1.75rem' }}>
-                  <h4 style={{ fontSize: '0.92rem', fontWeight: 700, color: '#ffffff', textTransform: 'uppercase', marginBottom: '0.85rem' }}>
-                    + Add Expense Line Item
-                  </h4>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.85rem' }}>
+                    <h4 style={{ fontSize: '0.92rem', fontWeight: 700, color: '#ffffff', textTransform: 'uppercase', margin: 0 }}>
+                      Add Expense
+                    </h4>
+                    <button type="button" onClick={() => setIsExpenseFormOpen(false)} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.6)', cursor: 'pointer', display: 'flex' }}>
+                      <XCircle size={18} />
+                    </button>
+                  </div>
 
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '0.75rem', alignItems: 'end' }}>
                     <div>
@@ -1698,8 +1769,8 @@ export function SecretVault({
                     </button>
                   </div>
                 </form>
+                )}
 
-                {/* Expense Line Items Table */}
                 <div style={{ background: '#18181c', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '14px', overflowX: 'auto' }}>
                   <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.88rem' }}>
                     <thead>
@@ -1736,9 +1807,11 @@ export function SecretVault({
                               {diff >= 0 ? `+$${diff}` : `-$${Math.abs(diff)}`}
                             </td>
                             <td style={{ padding: '0.85rem 1rem', textAlign: 'right' }}>
-                              <button onClick={() => handleDeleteExpense(e.id)} style={{ background: 'none', border: 'none', color: '#ff6b6b', cursor: 'pointer' }}>
-                                <Trash2 size={14} />
-                              </button>
+                              {canEdit && (
+                                <button onClick={() => handleDeleteExpense(e.id)} style={{ background: 'none', border: 'none', color: '#ff6b6b', cursor: 'pointer' }}>
+                                  <Trash2 size={14} />
+                                </button>
+                              )}
                             </td>
                           </tr>
                         );
@@ -1749,14 +1822,12 @@ export function SecretVault({
               </div>
             )}
 
-            {/* FEATURE VIEW 4: CLASSIFIED DIGITAL DOCUMENT STORAGE */}
             {activeTab === 'DOCUMENTS' && (
               <div>
                 <h3 style={{ fontSize: '1.6rem', fontFamily: 'var(--font-serif)', fontStyle: 'normal', color: '#ffffff', marginBottom: '1.25rem', fontWeight: 600 }}>
                   Classified Digital Dossier & Files
                 </h3>
 
-                {/* Category Filter Pills */}
                 <div style={{ display: 'flex', gap: '0.5rem', overflowX: 'auto', marginBottom: '1.5rem' }}>
                   {['ALL', 'Legal & Marriage', 'Hotel & Travel', 'Vendor Receipts', 'Personal & Notes'].map(cat => (
                     <button
@@ -1779,11 +1850,25 @@ export function SecretVault({
                   ))}
                 </div>
 
-                {/* Form: Upload & Classify New Document */}
+                {!canEdit ? null : !isDocFormOpen ? (
+                  <button
+                    type="button"
+                    onClick={() => setIsDocFormOpen(true)}
+                    className="btn-outline btn-sm"
+                    style={{ marginBottom: '1.75rem', borderColor: 'rgba(255,255,255,0.25)', color: '#ffffff' }}
+                  >
+                    <Plus size={14} /> Add Document
+                  </button>
+                ) : (
                 <form onSubmit={handleAddDocument} style={{ background: '#18181c', padding: '1.25rem', borderRadius: '14px', border: '1px solid rgba(255,255,255,0.15)', marginBottom: '1.75rem' }}>
-                  <h4 style={{ fontSize: '0.92rem', fontWeight: 700, color: '#ffffff', textTransform: 'uppercase', marginBottom: '0.85rem' }}>
-                    + Upload & Classify Document to Vault
-                  </h4>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.85rem' }}>
+                    <h4 style={{ fontSize: '0.92rem', fontWeight: 700, color: '#ffffff', textTransform: 'uppercase', margin: 0 }}>
+                      Add Document
+                    </h4>
+                    <button type="button" onClick={() => setIsDocFormOpen(false)} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.6)', cursor: 'pointer', display: 'flex' }}>
+                      <XCircle size={18} />
+                    </button>
+                  </div>
 
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '0.75rem', alignItems: 'end' }}>
                     <div>
@@ -1843,8 +1928,8 @@ export function SecretVault({
                     </button>
                   </div>
                 </form>
+                )}
 
-                {/* Classified Documents Grid */}
                 {documents.filter(d => docCategoryFilter === 'ALL' || d.category === docCategoryFilter).length === 0 ? (
                   <div style={{ padding: '2.5rem', textAlign: 'center', background: '#18181c', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '14px', color: 'rgba(255,255,255,0.5)' }}>
                     No classified dossier documents stored yet. Use the form above to upload & classify your first document!
@@ -1866,9 +1951,11 @@ export function SecretVault({
                             </div>
                           </div>
 
-                          <button onClick={() => handleDeleteDocument(doc.id)} style={{ background: 'none', border: 'none', color: '#ff6b6b', cursor: 'pointer' }}>
-                            <Trash2 size={13} />
-                          </button>
+                          {canEdit && (
+                            <button onClick={() => handleDeleteDocument(doc.id)} style={{ background: 'none', border: 'none', color: '#ff6b6b', cursor: 'pointer' }}>
+                              <Trash2 size={13} />
+                            </button>
+                          )}
                         </div>
 
                         <p style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.6)', margin: '0.5rem 0 1rem 0', lineHeight: 1.4 }}>
@@ -1888,7 +1975,6 @@ export function SecretVault({
               </div>
             )}
 
-            {/* FEATURE VIEW 5: SHARED COUPLE TASKS */}
             {activeTab === 'SHARED' && (
               <div>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem', borderBottom: '1px solid rgba(255,255,255,0.12)', paddingBottom: '1rem', flexWrap: 'wrap', gap: '0.75rem' }}>
@@ -1902,11 +1988,25 @@ export function SecretVault({
                   </div>
                 </div>
 
-                {/* Form: Type & Add New Shared Couple Task */}
+                {!canEdit ? null : !isTaskFormOpen ? (
+                  <button
+                    type="button"
+                    onClick={() => setIsTaskFormOpen(true)}
+                    className="btn-outline btn-sm"
+                    style={{ marginBottom: '1.75rem', borderColor: 'rgba(255,255,255,0.25)', color: '#ffffff' }}
+                  >
+                    <Plus size={14} /> Add New Shared Task
+                  </button>
+                ) : (
                 <form onSubmit={handleAddSharedTaskSubmit} style={{ background: '#18181c', padding: '1.25rem', borderRadius: '14px', border: '1px solid rgba(255,255,255,0.15)', marginBottom: '1.75rem' }}>
-                  <h4 style={{ fontSize: '0.92rem', fontWeight: 700, color: '#ffffff', textTransform: 'uppercase', marginBottom: '0.85rem' }}>
-                    + Type &amp; Add New Shared Task to Couple Checklist
-                  </h4>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.85rem' }}>
+                    <h4 style={{ fontSize: '0.92rem', fontWeight: 700, color: '#ffffff', textTransform: 'uppercase', margin: 0 }}>
+                      + Type &amp; Add New Shared Task to Couple Checklist
+                    </h4>
+                    <button type="button" onClick={() => setIsTaskFormOpen(false)} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.6)', cursor: 'pointer', display: 'flex' }}>
+                      <XCircle size={18} />
+                    </button>
+                  </div>
 
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '0.75rem', alignItems: 'end' }}>
                     <div style={{ flex: 2 }}>
@@ -1958,6 +2058,7 @@ export function SecretVault({
                     </button>
                   </div>
                 </form>
+                )}
 
                 <div>
                   {filteredSharedTodos.length === 0 ? (
@@ -1983,9 +2084,10 @@ export function SecretVault({
                         >
                           <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.85rem', flex: 1 }}>
                             <button
-                              onClick={() => onToggleTodo(todo.id, 'SHARED')}
+                              onClick={canEdit ? () => onToggleTodo(todo.id, 'SHARED') : undefined}
+                              disabled={!canEdit}
                               className={`custom-checkbox ${todo.completed ? 'checked' : ''}`}
-                              style={{ marginTop: '0.2rem', flexShrink: 0 }}
+                              style={{ marginTop: '0.2rem', flexShrink: 0, cursor: canEdit ? 'pointer' : 'default' }}
                             >
                               {todo.completed && <CheckCircle2 size={15} />}
                             </button>
@@ -2052,14 +2154,16 @@ export function SecretVault({
                               </button>
                             )}
 
-                            <button
-                              onClick={() => onDeleteTodo(todo.id, 'SHARED')}
-                              className="btn-outline btn-sm"
-                              style={{ padding: '0.25rem 0.5rem', color: '#ff6b6b', borderColor: 'rgba(255,107,107,0.3)' }}
-                              title="Delete task"
-                            >
-                              <Trash2 size={13} />
-                            </button>
+                            {canEdit && (
+                              <button
+                                onClick={() => onDeleteTodo(todo.id, 'SHARED')}
+                                className="btn-outline btn-sm"
+                                style={{ padding: '0.25rem 0.5rem', color: '#ff6b6b', borderColor: 'rgba(255,107,107,0.3)' }}
+                                title="Delete task"
+                              >
+                                <Trash2 size={13} />
+                              </button>
+                            )}
                           </div>
 
                         </div>
@@ -2070,7 +2174,6 @@ export function SecretVault({
               </div>
             )}
 
-            {/* FEATURE VIEW 6: DATE & MEETING INVITATIONS */}
             {activeTab === 'MEETINGS' && (
               <div>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem', borderBottom: '1px solid rgba(255,255,255,0.12)', paddingBottom: '1rem', flexWrap: 'wrap', gap: '0.75rem' }}>
@@ -2084,7 +2187,6 @@ export function SecretVault({
                   </div>
                 </div>
 
-                {/* Info Guide Card explaining cross-account features */}
                 <div style={{
                   background: '#18181c',
                   border: '1px solid rgba(255, 255, 255, 0.15)',
@@ -2104,11 +2206,25 @@ export function SecretVault({
                   </p>
                 </div>
 
-                {/* Form: Propose / Schedule New Date or Meeting */}
+                {!canEdit ? null : !isMeetingFormOpen ? (
+                  <button
+                    type="button"
+                    onClick={() => setIsMeetingFormOpen(true)}
+                    className="btn-outline btn-sm"
+                    style={{ marginBottom: '1.75rem', borderColor: 'rgba(255,255,255,0.25)', color: '#ffffff' }}
+                  >
+                    <Plus size={14} /> Schedule Meeting
+                  </button>
+                ) : (
                 <form onSubmit={handleCreateMeetingSubmit} style={{ background: '#18181c', padding: '1.25rem', borderRadius: '14px', border: '1px solid rgba(255,255,255,0.15)', marginBottom: '1.75rem' }}>
-                  <h4 style={{ fontSize: '0.92rem', fontWeight: 700, color: '#ffffff', textTransform: 'uppercase', marginBottom: '0.85rem' }}>
-                    + Schedule a Date or Meeting with {currentUser === 'MANZI' ? 'Nikita' : currentUser === 'NIKITA' ? 'Manzi' : 'Partner'}
-                  </h4>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.85rem' }}>
+                    <h4 style={{ fontSize: '0.92rem', fontWeight: 700, color: '#ffffff', textTransform: 'uppercase', margin: 0 }}>
+                      Schedule Meeting
+                    </h4>
+                    <button type="button" onClick={() => setIsMeetingFormOpen(false)} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.6)', cursor: 'pointer', display: 'flex' }}>
+                      <XCircle size={18} />
+                    </button>
+                  </div>
 
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '0.75rem' }}>
                     <div>
@@ -2182,8 +2298,8 @@ export function SecretVault({
                     </button>
                   </div>
                 </form>
+                )}
 
-                {/* List of Invites */}
                 <div>
                   <h4 style={{ fontSize: '1.1rem', fontWeight: 600, color: '#ffffff', marginBottom: '1rem' }}>
                     Date &amp; Meeting Requests ({meetingRequests.length})
@@ -2196,7 +2312,7 @@ export function SecretVault({
                   ) : (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                       {meetingRequests.map((req) => {
-                        const isRecipient = currentUser === req.to || currentUser === 'GUEST';
+                        const isRecipient = canEdit && currentUser === req.to;
 
                         return (
                           <div
@@ -2244,7 +2360,6 @@ export function SecretVault({
                                 </div>
                               </div>
 
-                              {/* Action buttons for recipient */}
                               {req.status === 'PENDING' && isRecipient && (
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
                                   <button
@@ -2293,7 +2408,6 @@ export function SecretVault({
               </div>
             )}
 
-            {/* FEATURE VIEW 7: PERSONAL NOTE PAD */}
             {activeTab === 'NOTES' && (
               <div>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem', borderBottom: '1px solid rgba(255,255,255,0.12)', paddingBottom: '1rem', flexWrap: 'wrap', gap: '0.75rem' }}>
@@ -2306,7 +2420,6 @@ export function SecretVault({
                     </p>
                   </div>
 
-                  {/* Mode Selector Toggle */}
                   <div style={{
                     display: 'inline-flex',
                     background: '#09090b',
@@ -2356,14 +2469,12 @@ export function SecretVault({
                 </div>
 
                 {notesViewMode === 'CHECKLIST' ? (
-                  /* MODERNIZED INTERACTIVE CHECKLIST VIEW */
                   <div>
-                    {/* Add Item Form */}
                     <form onSubmit={handleAddChecklistItem} style={{ background: '#18181c', padding: '1.25rem', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.15)', marginBottom: '1.5rem' }}>
                       <label className="form-label" style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.7)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                         + Add New Checklist Item
                       </label>
-                      <div style={{ display: 'flex', gap: '0.75rem', marginTop: '0.4rem' }}>
+                      <div className="vault-add-item-row" style={{ display: 'flex', gap: '0.75rem', marginTop: '0.4rem' }}>
                         <input
                           type="text"
                           value={newChecklistItem}
@@ -2378,7 +2489,6 @@ export function SecretVault({
                       </div>
                     </form>
 
-                    {/* Progress Bar Header */}
                     {parsedNoteLines.length > 0 && (
                       <div style={{ background: '#18181c', padding: '1rem 1.25rem', borderRadius: '14px', border: '1px solid rgba(255,255,255,0.15)', marginBottom: '1.25rem' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem', fontSize: '0.82rem', fontWeight: 700, color: '#ffffff' }}>
@@ -2399,7 +2509,6 @@ export function SecretVault({
                       </div>
                     )}
 
-                    {/* Checklist Items List */}
                     {parsedNoteLines.length === 0 ? (
                       <div style={{ padding: '3rem', textAlign: 'center', background: '#18181c', border: '1px dashed rgba(255,255,255,0.2)', borderRadius: '16px', color: 'rgba(255,255,255,0.5)' }}>
                         Your checklist is empty. Add your first item above!
@@ -2425,7 +2534,6 @@ export function SecretVault({
                               onClick={() => handleToggleCheckline(item.originalIndex)}
                               style={{ display: 'flex', alignItems: 'center', gap: '0.85rem', flex: 1, cursor: 'pointer' }}
                             >
-                              {/* Sleek Custom Checkbox Circle */}
                               <div style={{
                                 width: '22px',
                                 height: '22px',
@@ -2465,7 +2573,6 @@ export function SecretVault({
                     )}
                   </div>
                 ) : (
-                  /* FREEFORM PARAGRAPHS EDITOR MODE */
                   <div style={{ background: '#18181c', border: '1px solid rgba(255,255,255,0.18)', borderRadius: '16px', padding: '1.5rem' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
                       <span style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.6)', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600 }}>
@@ -2521,10 +2628,10 @@ export function SecretVault({
               </div>
             )}
 
-          </div>
+            {activeTab === 'CALENDAR' && renderMonthsCalendar()}
 
-          {/* SEPTEMBER & OCTOBER 2026 SCHEDULED CIVIL EVENTS & CALENDAR GRID */}
-          {renderMonthsCalendar()}
+          </div>
+          )}
 
         </div>
 

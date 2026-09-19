@@ -1,8 +1,12 @@
-// Storage service for Manzi & Nikita Civil Wedding
+import { doc, onSnapshot, setDoc } from 'firebase/firestore';
+import { db } from './firebase';
 
-const STORAGE_KEY = 'MN_ANNIVERSARY_DATA_V46';
+// wedding/shared is readable by anyone but only writable by Manzi/Nikita's
+// accounts; wedding/private_manzi and private_nikita are readable/writable
+// only by that person's own account (enforced in firestore.rules).
+const LEGACY_STORAGE_KEY = 'MN_ANNIVERSARY_DATA_V46';
 
-export const initialData = {
+export const initialSharedData = {
   couple: {
     partner1: 'Manzi',
     partner2: 'Nikita',
@@ -12,12 +16,6 @@ export const initialData = {
     yearText: 'Civil Wedding Celebration',
     subtitle: 'Celebrating Manzi & Nikita tying the knot at Toronto City Hall',
     heroImage: '/images/backgroungImage.jpg',
-  },
-  manziVows: "Nikita, my love, standing here today at City Hall is the culmination of every laughter, late-night conversation, and quiet moment we've shared. I promise to love you fiercely, honor your dreams, and walk by your side through every adventure life brings us.",
-  nikitaVows: "Manzi, from the day we met to this unforgettable moment in Toronto, you have been my rock, my joy, and my safest home. I promise to cherish you, laugh with you through every bump on the road, and celebrate our love every single day.",
-  auth: {
-    manziPin: '1234',
-    nikitaPin: '5678',
   },
   itineraryActivityLog: [
     {
@@ -29,11 +27,7 @@ export const initialData = {
   ],
   meetingRequests: [],
   sharedTodos: [],
-  manziSecretTodos: [],
-  nikitaSecretTodos: [],
-  manziSecretNotes: [],
-  nikitaSecretNotes: [],
-  guestContributions: [],
+  guestList: [],
   budgetPlanner: {
     totalBudget: 10000,
     expenses: []
@@ -326,109 +320,61 @@ export const initialData = {
   ],
 };
 
-export const getStoredData = () => {
-  try {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved) {
-      const parsed = JSON.parse(saved);
-      if (parsed.events) {
-        parsed.events = parsed.events.map(e => {
-          if (e.id === 'evt-sep-license' || e.title?.includes('License')) {
-            return { ...e, image: '/images/marriageLicense.jpg' };
-          }
-          if (e.id === 'evt-sep-vows' || e.title?.includes('Vow')) {
-            return { ...e, image: '/images/vows_image.jpg' };
-          }
-          if (e.id === 'evt-sep-pack' || e.id === 'evt-oct-pack' || e.title?.toLowerCase().includes('pack')) {
-            return {
-              ...e,
-              id: 'evt-oct-pack',
-              date: '2026-10-08',
-              dayLabel: 'Thursday, Oct 8',
-              title: 'Start Packing',
-              image: '/images/packingChecklist.jpg'
-            };
-          }
-          if (e.id === 'evt-1' || e.title?.includes('Irembo')) {
-            return {
-              ...e,
-              location: '119 Beausoleil',
-              notes: 'Family gathering & traditional Irembo ceremony for Manzi & Nikita at 119 Beausoleil.'
-            };
-          }
-          if (e.id === 'evt-suit' || e.title === 'Suit Fitting & Barbering' || e.title === 'Barber Appointment') {
-            return { ...e, title: 'Barber Appointment', image: '/images/barber_image.jpg', forWho: 'MANZI' };
-          }
-          if (e.id === 'evt-3' || e.title === 'Glam Up') {
-            return { ...e, image: '/images/civil_prepMorning.jpg', forWho: 'NIKITA' };
-          }
-          if (e.id === 'evt-manzi-prep' || e.title === 'Groom Suit & Prep') {
-            return { ...e, time: '10:00 AM', image: '/images/groomprep.jpg', forWho: 'MANZI' };
-          }
-          if (e.id === 'evt-brunch') {
-            return { ...e, title: 'The Morning After (Brunch)', image: '/images/brunch_image.jpg', date: '2026-10-16', dayLabel: 'Friday, Oct 16', time: '01:00 PM' };
-          }
-          if (e.id === 'evt-5' || e.title?.includes('Two Becomes One')) {
-            return { ...e, title: 'Two Becomes One' };
-          }
-          if (e.id === 'evt-7' || e.title === 'In the Club We All Fam') {
-            return { ...e, location: 'Location TBD' };
-          }
-          if (e.id === 'evt-8' || e.title?.toLowerCase().includes('checkout')) {
-            return { ...e, image: '/images/backhome.jpg' };
-          }
-          return e;
-        });
+export const initialPrivateData = {
+  vows: '',
+  personalNotes: '',
+};
 
-        const hasManziPrep = parsed.events.some(e => e.id === 'evt-manzi-prep');
-        if (!hasManziPrep) {
-          parsed.events.push({
-            id: 'evt-manzi-prep',
-            date: '2026-10-15',
-            dayLabel: 'Thursday, Oct 15',
-            time: '10:00 AM',
-            title: 'Groom Suit & Prep',
-            location: 'King Street West Airbnb',
-            category: 'Civil',
-            status: 'Confirmed',
-            forWho: 'MANZI',
-            notes: 'Suit dressing, tie adjustment, and groom prep for Manzi before the ceremony.',
-            completed: false,
-            image: '/images/groomprep.jpg',
-          });
-        }
-      }
-      if (parsed.tripInfo) {
-        parsed.tripInfo.checkoutImage = '/images/backhome.jpg';
-        if (parsed.tripInfo.iremboDetails?.includes('Mum')) {
-          parsed.tripInfo.iremboDetails = '10/10/2026 at 4:30 PM at 119 Beausoleil';
-        }
-      }
-      if (parsed.dayTitles) {
-        delete parsed.dayTitles['2026-09-30'];
-        parsed.dayTitles['2026-10-08'] = 'Start Packing Checklist';
-      }
-      return parsed;
+function buildSharedSeed() {
+  try {
+    const legacy = localStorage.getItem(LEGACY_STORAGE_KEY);
+    if (legacy) {
+      const parsed = JSON.parse(legacy);
+      const dropped = ['manziVows', 'nikitaVows', 'auth', 'manziSecretTodos', 'nikitaSecretTodos', 'manziSecretNotes', 'nikitaSecretNotes', 'guestContributions'];
+      const shared = Object.fromEntries(Object.entries(parsed).filter(([key]) => !dropped.includes(key)));
+      return { ...initialSharedData, ...shared };
     }
-  } catch (e) {
-    console.error('Failed to load from storage', e);
+  } catch {}
+  return initialSharedData;
+}
+
+function buildPrivateSeed(role) {
+  try {
+    const legacy = localStorage.getItem(LEGACY_STORAGE_KEY);
+    const legacyVows = legacy ? JSON.parse(legacy)[role === 'MANZI' ? 'manziVows' : 'nikitaVows'] : '';
+    const legacyNotes = localStorage.getItem(`mn_personal_notes_${role}_v4`) || '';
+    return { ...initialPrivateData, vows: legacyVows || '', personalNotes: legacyNotes };
+  } catch {
+    return initialPrivateData;
   }
-  return initialData;
+}
+
+// Falls back to seed data if the doc doesn't exist yet — guests can't write,
+// so it's only actually created once Manzi or Nikita saves something.
+export const subscribeShared = (callback) => {
+  const ref = doc(db, 'wedding', 'shared');
+  return onSnapshot(ref, (snap) => {
+    callback(snap.exists() ? snap.data() : buildSharedSeed());
+  }, (err) => console.error('Failed to load shared wedding data', err));
 };
 
-export const saveStoredData = (data) => {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-  } catch (e) {
-    console.error('Failed to save to storage', e);
-  }
+export const saveShared = (data) => {
+  setDoc(doc(db, 'wedding', 'shared'), data).catch((err) => console.error('Failed to save shared wedding data', err));
 };
 
-export const resetStoredData = () => {
-  try {
-    localStorage.removeItem(STORAGE_KEY);
-  } catch (e) {
-    console.error('Failed to reset storage', e);
-  }
-  return initialData;
+const privateDocId = (role) => (role === 'MANZI' ? 'private_manzi' : 'private_nikita');
+
+export const subscribePrivate = (role, callback) => {
+  const ref = doc(db, 'wedding', privateDocId(role));
+  return onSnapshot(ref, (snap) => {
+    callback(snap.exists() ? snap.data() : buildPrivateSeed(role));
+  }, (err) => console.error('Failed to load private vault data', err));
+};
+
+export const savePrivate = (role, data) => {
+  setDoc(doc(db, 'wedding', privateDocId(role)), data).catch((err) => console.error('Failed to save private vault data', err));
+};
+
+export const resetSharedData = () => {
+  setDoc(doc(db, 'wedding', 'shared'), initialSharedData).catch((err) => console.error('Failed to reset shared wedding data', err));
 };
