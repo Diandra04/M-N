@@ -308,7 +308,7 @@ export function ItineraryPlanner({
                           </div>
                         )}
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', flexWrap: 'wrap' }}>
-                          <h3 style={{
+                          <div style={{
                             fontSize: '1.05rem',
                             fontFamily: 'var(--font-sans)',
                             fontWeight: 700,
@@ -317,7 +317,7 @@ export function ItineraryPlanner({
                             lineHeight: 1.3
                           }}>
                             {subtitle || dayLabel}
-                          </h3>
+                          </div>
 
                           {canEdit && onUpdateDayTitle && (
                             <button
@@ -355,12 +355,7 @@ export function ItineraryPlanner({
                   })()}
 
                   {isDayExpanded && (
-                  <div style={{
-                    display: 'grid',
-                    gridTemplateColumns: 'repeat(auto-fill, minmax(270px, 1fr))',
-                    gap: '1.75rem',
-                    alignItems: 'start'
-                  }}>
+                  <div className="itinerary-day-grid" style={{ alignItems: 'start' }}>
                     {rankGroup.events.map((evt) => {
                       const isFlipped = flippedIds.has(evt.id);
                       const targetWho = getEventPerson(evt);
@@ -372,9 +367,8 @@ export function ItineraryPlanner({
                           <div className="bw-connector-dot" />
                           <div className="bw-card-diamond" />
                           
-                          <div 
-                            className={`flip-card-container ${isFlipped ? 'flipped' : ''}`}
-                            style={{ minHeight: '340px' }}
+                          <div
+                            className={`flip-card-container event-flip-card ${isFlipped ? 'flipped' : ''}`}
                           >
                             <div className="flip-card-inner">
                               

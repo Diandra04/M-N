@@ -490,10 +490,33 @@ img, video, canvas, svg {
   }
 }
 
+.itinerary-day-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(270px, 1fr));
+  gap: 1.75rem;
+}
+
+.event-flip-card {
+  min-height: 340px;
+}
+
 /* Phones & small tablets */
 @media (max-width: 768px) {
   .container {
     padding: 0 1rem;
+  }
+
+  /* Two columns instead of stacking single-file as more events get added */
+  .itinerary-day-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.85rem;
+  }
+
+  /* Cards are much narrower at 2-up, so the fixed min-height (sized for
+     desktop card widths) would otherwise leave a large empty gap under
+     each square image. Flipped-card detail text still scrolls internally. */
+  .event-flip-card {
+    min-height: 230px;
   }
 
   .hero-countdown-badge {
