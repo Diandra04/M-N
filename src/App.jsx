@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { onAuthStateChanged, signOut, signInWithRedirect, getRedirectResult } from 'firebase/auth';
+import { onAuthStateChanged, signOut, signInWithPopup } from 'firebase/auth';
 import { Navbar } from './components/Navbar';
 import { Hero } from './components/Hero';
 import { ItineraryPlanner } from './components/ItineraryPlanner';
@@ -40,14 +40,6 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    // Surfaces errors from the signInWithRedirect round trip (e.g. blocked
-    // popup fallback, unauthorized domain) once the browser lands back here.
-    getRedirectResult(auth).catch((err) => {
-      if (err.code !== 'auth/popup-closed-by-user' && err.code !== 'auth/cancelled-popup-request') {
-        setAuthError('Sign-in failed. Please try again.');
-      }
-    });
-
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       const role = getRoleForEmail(user?.email);
       if (user && !role) {
@@ -66,9 +58,12 @@ export default function App() {
   const handleGoogleSignIn = async () => {
     setAuthError('');
     try {
-      await signInWithRedirect(auth, googleProvider);
-    } catch {
-      setAuthError('Sign-in failed. Please try again.');
+      await signInWithPopup(auth, googleProvider);
+      // Role check + "not linked" rejection happens in onAuthStateChanged above.
+    } catch (err) {
+      if (err.code !== 'auth/popup-closed-by-user' && err.code !== 'auth/cancelled-popup-request') {
+        setAuthError('Sign-in failed. Please try again.');
+      }
     }
   };
 
