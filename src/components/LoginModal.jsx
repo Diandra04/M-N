@@ -94,13 +94,13 @@ export function LoginModal({ isOpen, onClose, errorMsg, onSignIn }) {
           paddingTop: '0.85rem',
           borderTop: '1px solid #f0f0f0',
           display: 'flex',
-          alignItems: 'center',
+          alignItems: 'flex-start',
           justifyContent: 'center',
           gap: '0.4rem',
           fontSize: '0.75rem',
           color: '#888888'
         }}>
-          <ShieldCheck size={14} style={{ color: '#34A853' }} />
+          <ShieldCheck size={14} style={{ color: '#34A853', flexShrink: 0, marginTop: '0.15rem' }} />
           <span>Stays signed in on this device until you sign out</span>
         </div>
 
