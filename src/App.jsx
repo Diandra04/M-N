@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { onAuthStateChanged, signOut } from 'firebase/auth';
+import { onAuthStateChanged, signOut, signInWithRedirect, getRedirectResult } from 'firebase/auth';
 import { Navbar } from './components/Navbar';
 import { Hero } from './components/Hero';
 import { ItineraryPlanner } from './components/ItineraryPlanner';
@@ -9,7 +9,7 @@ import { EditDetailsModal } from './components/EditDetailsModal';
 import { AddEventModal } from './components/AddEventModal';
 import { LoginModal } from './components/LoginModal';
 import { SignInGate } from './components/SignInGate';
-import { auth } from './services/firebase';
+import { auth, googleProvider } from './services/firebase';
 import { getRoleForEmail } from './services/googleAuth';
 import {
   initialSharedData,
@@ -27,6 +27,7 @@ export default function App() {
   const [editMode, setEditMode] = useState(false);
   const [currentUser, setCurrentUser] = useState('GUEST'); // 'GUEST' | 'MANZI' | 'NIKITA'
   const [authReady, setAuthReady] = useState(false);
+  const [authError, setAuthError] = useState('');
 
   const [isEditDetailsOpen, setIsEditDetailsOpen] = useState(false);
   const [isAddEventOpen, setIsAddEventOpen] = useState(false);
@@ -39,12 +40,37 @@ export default function App() {
   }, []);
 
   useEffect(() => {
+    // Surfaces errors from the signInWithRedirect round trip (e.g. blocked
+    // popup fallback, unauthorized domain) once the browser lands back here.
+    getRedirectResult(auth).catch((err) => {
+      if (err.code !== 'auth/popup-closed-by-user' && err.code !== 'auth/cancelled-popup-request') {
+        setAuthError('Sign-in failed. Please try again.');
+      }
+    });
+
     const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setCurrentUser(getRoleForEmail(user?.email) || 'GUEST');
+      const role = getRoleForEmail(user?.email);
+      if (user && !role) {
+        setAuthError(`"${user.email}" isn't linked to this planner.`);
+        signOut(auth);
+        setCurrentUser('GUEST');
+        setAuthReady(true);
+        return;
+      }
+      setCurrentUser(role || 'GUEST');
       setAuthReady(true);
     });
     return unsubscribe;
   }, []);
+
+  const handleGoogleSignIn = async () => {
+    setAuthError('');
+    try {
+      await signInWithRedirect(auth, googleProvider);
+    } catch {
+      setAuthError('Sign-in failed. Please try again.');
+    }
+  };
 
   useEffect(() => {
     // vows/notes are per-person Firestore docs, only readable by that account
@@ -271,7 +297,7 @@ export default function App() {
   };
 
   if (!authReady || currentUser === 'GUEST') {
-    return <SignInGate />;
+    return <SignInGate errorMsg={authError} onSignIn={handleGoogleSignIn} />;
   }
 
   return (
@@ -355,7 +381,8 @@ export default function App() {
       <LoginModal
         isOpen={isLoginModalOpen}
         onClose={() => setIsLoginModalOpen(false)}
-        onLogin={() => {}} // currentUser updates via onAuthStateChanged above
+        errorMsg={authError}
+        onSignIn={handleGoogleSignIn}
       />
 
     </div>

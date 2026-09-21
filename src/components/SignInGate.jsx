@@ -1,33 +1,15 @@
 import React, { useState } from 'react';
 import { LogIn, ShieldCheck } from 'lucide-react';
-import { signInWithPopup } from 'firebase/auth';
-import { auth, googleProvider } from '../services/firebase';
-import { getRoleForEmail } from '../services/googleAuth';
 
-export function SignInGate() {
-  const [errorMsg, setErrorMsg] = useState('');
+export function SignInGate({ errorMsg, onSignIn }) {
   const [isSigningIn, setIsSigningIn] = useState(false);
 
   const handleGoogleSignIn = async () => {
-    setErrorMsg('');
     setIsSigningIn(true);
-    try {
-      const result = await signInWithPopup(auth, googleProvider);
-      const role = getRoleForEmail(result.user.email);
-
-      if (!role) {
-        await auth.signOut();
-        setErrorMsg(`"${result.user.email}" isn't linked to this planner.`);
-        setIsSigningIn(false);
-        return;
-      }
-      // App.jsx picks up the signed-in user via onAuthStateChanged from here
-    } catch (err) {
-      if (err.code !== 'auth/popup-closed-by-user' && err.code !== 'auth/cancelled-popup-request') {
-        setErrorMsg('Sign-in failed. Please try again.');
-      }
-      setIsSigningIn(false);
-    }
+    // Navigates away to Google and back; App.jsx picks up the result via
+    // getRedirectResult/onAuthStateChanged once the browser returns here.
+    await onSignIn();
+    setIsSigningIn(false);
   };
 
   return (

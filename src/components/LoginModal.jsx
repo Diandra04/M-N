@@ -1,43 +1,17 @@
 import React, { useState } from 'react';
 import { X, ShieldCheck, LogIn } from 'lucide-react';
-import { signInWithPopup } from 'firebase/auth';
-import { auth, googleProvider } from '../services/firebase';
-import { getRoleForEmail } from '../services/googleAuth';
 
-export function LoginModal({ isOpen, onClose, onLogin }) {
-  const [errorMsg, setErrorMsg] = useState('');
-  const [successMsg, setSuccessMsg] = useState('');
+export function LoginModal({ isOpen, onClose, errorMsg, onSignIn }) {
   const [isSigningIn, setIsSigningIn] = useState(false);
 
   if (!isOpen) return null;
 
   const handleGoogleSignIn = async () => {
-    setErrorMsg('');
-    setSuccessMsg('');
     setIsSigningIn(true);
-    try {
-      const result = await signInWithPopup(auth, googleProvider);
-      const email = result.user.email;
-      const role = getRoleForEmail(email);
-
-      if (!role) {
-        await auth.signOut();
-        setErrorMsg(`"${email}" isn't linked to a vault. Only Manzi & Nikita's Google accounts can sign in.`);
-        setIsSigningIn(false);
-        return;
-      }
-
-      setSuccessMsg(`Welcome, ${result.user.displayName || email}! Vault Unlocked.`);
-      setTimeout(() => {
-        onLogin(role);
-        onClose();
-      }, 450);
-    } catch (err) {
-      if (err.code !== 'auth/popup-closed-by-user' && err.code !== 'auth/cancelled-popup-request') {
-        setErrorMsg('Sign-in failed. Please try again.');
-      }
-      setIsSigningIn(false);
-    }
+    // Navigates away to Google and back; App.jsx picks up the result via
+    // getRedirectResult/onAuthStateChanged once the browser returns here.
+    await onSignIn();
+    setIsSigningIn(false);
   };
 
   return (
@@ -86,22 +60,6 @@ export function LoginModal({ isOpen, onClose, onLogin }) {
             fontWeight: 500
           }}>
             {errorMsg}
-          </div>
-        )}
-
-        {successMsg && (
-          <div style={{
-            background: '#F0FFF4',
-            color: '#2F855A',
-            border: '1px solid #9AE6B4',
-            padding: '0.6rem 0.85rem',
-            borderRadius: '10px',
-            fontSize: '0.8rem',
-            marginBottom: '1rem',
-            textAlign: 'center',
-            fontWeight: 600
-          }}>
-            {successMsg}
           </div>
         )}
 
