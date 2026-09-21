@@ -122,7 +122,7 @@ export function Hero({ couple }) {
             </blockquote>
 
             <blockquote style={{
-              fontSize: '1rem',
+              fontSize: '1.1rem',
               color: 'rgba(255,255,255,0.85)',
               fontFamily: 'var(--font-serif)',
               fontStyle: 'italic',
@@ -134,7 +134,7 @@ export function Hero({ couple }) {
             }}>
               “You are the best surprise of my life.”
               <footer style={{
-                fontSize: '0.78rem',
+                fontSize: '0.82rem',
                 fontStyle: 'normal',
                 color: 'rgba(255,255,255,0.65)',
                 marginTop: '0.4rem',
