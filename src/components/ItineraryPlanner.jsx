@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import {
-  Plus, Trash2, Edit, RotateCcw, Clock, MapPin, CheckCircle2, AlertTriangle
+  Plus, Trash2, Edit, RotateCcw, Clock, MapPin, CheckCircle2, AlertTriangle, ChevronDown, ChevronsDownUp, ChevronsUpDown
 } from 'lucide-react';
 
 export function ItineraryPlanner({
@@ -58,6 +58,27 @@ export function ItineraryPlanner({
   }, {});
 
   const dateRankKeys = Object.keys(groupedDateRanks).sort();
+
+  // Days collapse by default so the page doesn't grow endlessly as more
+  // events get added — only the nearest upcoming (or most recent) day
+  // opens automatically.
+  const [expandedDays, setExpandedDays] = useState(() => {
+    const upcoming = dateRankKeys.find(k => !isDateInPast(k));
+    const defaultKey = upcoming || dateRankKeys[dateRankKeys.length - 1];
+    return defaultKey ? new Set([defaultKey]) : new Set();
+  });
+
+  const toggleDayExpanded = (dateKey) => {
+    setExpandedDays(prev => {
+      const next = new Set(prev);
+      if (next.has(dateKey)) {
+        next.delete(dateKey);
+      } else {
+        next.add(dateKey);
+      }
+      return next;
+    });
+  };
 
   const getDateRankTitle = (dateKey, label) => {
     const cleanLabel = (label || '').replace(/[\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\u{1F700}-\u{1F77F}\u{1F800}-\u{1F8FF}\u{1F900}-\u{1F9FF}\u{1FA00}-\u{1FA6F}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/gu, '').trim();
@@ -194,6 +215,32 @@ export function ItineraryPlanner({
               );
             })}
           </div>
+
+          {dateRankKeys.length > 1 && (
+            <button
+              onClick={() => setExpandedDays(
+                expandedDays.size === dateRankKeys.length ? new Set() : new Set(dateRankKeys)
+              )}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '0.4rem',
+                padding: '0.4rem 0.9rem',
+                borderRadius: '999px',
+                fontSize: '0.78rem',
+                fontWeight: 700,
+                cursor: 'pointer',
+                border: '1px solid rgba(0,0,0,0.15)',
+                background: 'transparent',
+                color: '#555555'
+              }}
+            >
+              {expandedDays.size === dateRankKeys.length
+                ? <ChevronsDownUp size={13} />
+                : <ChevronsUpDown size={13} />}
+              {expandedDays.size === dateRankKeys.length ? 'Collapse All Days' : 'Expand All Days'}
+            </button>
+          )}
         </div>
 
         <div style={{ position: 'relative' }}>
@@ -212,11 +259,12 @@ export function ItineraryPlanner({
           ) : (
             dateRankKeys.map((dateKey) => {
               const rankGroup = groupedDateRanks[dateKey];
+              const isDayExpanded = expandedDays.has(dateKey);
 
               return (
-                <div 
-                  key={dateKey} 
-                  style={{ 
+                <div
+                  key={dateKey}
+                  style={{
                     marginBottom: '3.5rem',
                     position: 'relative',
                     paddingLeft: '1.75rem'
@@ -226,7 +274,19 @@ export function ItineraryPlanner({
 
                   <div className="bw-day-node" />
 
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1.5rem', marginTop: '0.2rem', flexWrap: 'wrap' }}>
+                  <div
+                    onClick={() => toggleDayExpanded(dateKey)}
+                    style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: isDayExpanded ? '1.5rem' : '0', marginTop: '0.2rem', flexWrap: 'wrap', cursor: 'pointer' }}
+                  >
+                    <ChevronDown
+                      size={22}
+                      style={{
+                        color: 'rgba(0,0,0,0.4)',
+                        flexShrink: 0,
+                        transition: 'transform 0.2s ease',
+                        transform: isDayExpanded ? 'rotate(0deg)' : 'rotate(-90deg)'
+                      }}
+                    />
                     <h3 style={{
                       fontSize: '2.1rem',
                       fontFamily: 'var(--font-serif)',
@@ -240,9 +300,21 @@ export function ItineraryPlanner({
                       {getDateRankTitle(dateKey, rankGroup.dayLabel)}
                     </h3>
 
+                    <span style={{
+                      fontSize: '0.78rem',
+                      fontWeight: 700,
+                      color: '#888888',
+                      background: '#f2f2f2',
+                      padding: '0.2rem 0.65rem',
+                      borderRadius: '999px'
+                    }}>
+                      {rankGroup.events.length} event{rankGroup.events.length === 1 ? '' : 's'}
+                    </span>
+
                     {canEdit && onUpdateDayTitle && (
                       <button
-                        onClick={() => {
+                        onClick={(e) => {
+                          e.stopPropagation();
                           const current = (dayTitles && dayTitles[dateKey]) || '';
                           const input = prompt(`Edit Subtitle for ${rankGroup.dayLabel}:`, current);
                           if (input !== null) {
@@ -270,6 +342,7 @@ export function ItineraryPlanner({
                     )}
                   </div>
 
+                  {isDayExpanded && (
                   <div style={{
                     display: 'grid',
                     gridTemplateColumns: 'repeat(auto-fill, minmax(270px, 1fr))',
@@ -637,6 +710,7 @@ export function ItineraryPlanner({
                       );
                     })}
                   </div>
+                  )}
 
                 </div>
               );
