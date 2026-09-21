@@ -4,7 +4,12 @@ import { getFirestore, enableNetwork, disableNetwork } from 'firebase/firestore'
 
 const firebaseConfig = {
   apiKey: 'AIzaSyDGRT6GgaAWZNzoVF7pSOGfVtLQegvhCAs',
-  authDomain: 'manzi-nikita-wedding.firebaseapp.com',
+  // Using the site's own custom domain (rather than the default
+  // *.firebaseapp.com) keeps the Google sign-in handshake same-origin.
+  // Cross-origin storage partitioning in Safari (especially inside embedded
+  // browsers like the one Messages/Mail open) otherwise causes
+  // "missing initial state" sign-in failures.
+  authDomain: 'mandn.site',
   projectId: 'manzi-nikita-wedding',
   storageBucket: 'manzi-nikita-wedding.firebasestorage.app',
   messagingSenderId: '656095374052',
