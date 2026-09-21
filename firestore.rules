@@ -15,10 +15,7 @@ service cloud.firestore {
     function isCoupleAccount() {
       return request.auth != null &&
         (request.auth.token.email == 'rmanzi64@gmail.com' ||
-         request.auth.token.email == 'nikitaineza1@gmail.com' ||
-         // TEMP: Diandra's own account, for previewing/editing before the
-         // couple signs in for the first time. Remove once they've started using it.
-         request.auth.token.email == 'inturirediandra@gmail.com');
+         request.auth.token.email == 'nikitaineza1@gmail.com');
     }
 
     match /wedding/shared {
