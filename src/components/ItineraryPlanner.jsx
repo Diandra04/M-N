@@ -80,21 +80,24 @@ export function ItineraryPlanner({
     });
   };
 
+  const DEFAULT_DAY_SUBTITLES = {
+    '2026-10-10': 'Traditional Irembo Day',
+    '2026-10-13': 'Beauty Prep & Nails Day',
+    '2026-10-14': 'Hair Styling & Toronto Roadtrip Drive',
+    '2026-10-15': 'Civil Ceremony, Resto Dinner & Night Club',
+    '2026-10-16': 'The Morning After (Brunch) & Family Dinner',
+    '2026-10-17': 'Airbnb Checkout & Departure',
+  };
+
+  // Splits the day label (e.g. "Thursday, Oct 15") from its subtitle so the
+  // two can be styled separately — a small eyebrow date plus a lighter title.
   const getDateRankTitle = (dateKey, label) => {
     const cleanLabel = (label || '').replace(/[\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\u{1F700}-\u{1F77F}\u{1F800}-\u{1F8FF}\u{1F900}-\u{1F9FF}\u{1FA00}-\u{1FA6F}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/gu, '').trim();
-
     const custom = dayTitles && dayTitles[dateKey];
-    if (custom !== undefined && custom !== null && custom !== '') {
-      return `${cleanLabel} — ${custom}`;
-    }
-
-    if (dateKey === '2026-10-10') return `${cleanLabel} — Traditional Irembo Day`;
-    if (dateKey === '2026-10-13') return `${cleanLabel} — Beauty Prep & Nails Day`;
-    if (dateKey === '2026-10-14') return `${cleanLabel} — Hair Styling & Toronto Roadtrip Drive`;
-    if (dateKey === '2026-10-15') return `${cleanLabel} — Civil Ceremony, Resto Dinner & Night Club`;
-    if (dateKey === '2026-10-16') return `${cleanLabel} — The Morning After (Brunch) & Family Dinner`;
-    if (dateKey === '2026-10-17') return `${cleanLabel} — Airbnb Checkout & Departure`;
-    return cleanLabel;
+    const subtitle = (custom !== undefined && custom !== null && custom !== '')
+      ? custom
+      : (DEFAULT_DAY_SUBTITLES[dateKey] || '');
+    return { dayLabel: cleanLabel, subtitle };
   };
 
   const toggleFlip = (id) => {
@@ -274,73 +277,82 @@ export function ItineraryPlanner({
 
                   <div className="bw-day-node" />
 
-                  <div
-                    onClick={() => toggleDayExpanded(dateKey)}
-                    style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: isDayExpanded ? '1.5rem' : '0', marginTop: '0.2rem', flexWrap: 'wrap', cursor: 'pointer' }}
-                  >
-                    <ChevronDown
-                      size={22}
-                      style={{
-                        color: 'rgba(0,0,0,0.4)',
-                        flexShrink: 0,
-                        transition: 'transform 0.2s ease',
-                        transform: isDayExpanded ? 'rotate(0deg)' : 'rotate(-90deg)'
-                      }}
-                    />
-                    <h3 style={{
-                      fontSize: '2.1rem',
-                      fontFamily: 'var(--font-serif)',
-                      fontStyle: 'normal',
-                      fontWeight: 600,
-                      color: '#111111',
-                      margin: 0,
-                      lineHeight: 1.2,
-                      letterSpacing: '0.01em'
-                    }}>
-                      {getDateRankTitle(dateKey, rankGroup.dayLabel)}
-                    </h3>
-
-                    <span style={{
-                      fontSize: '0.78rem',
-                      fontWeight: 700,
-                      color: '#888888',
-                      background: '#f2f2f2',
-                      padding: '0.2rem 0.65rem',
-                      borderRadius: '999px'
-                    }}>
-                      {rankGroup.events.length} event{rankGroup.events.length === 1 ? '' : 's'}
-                    </span>
-
-                    {canEdit && onUpdateDayTitle && (
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          const current = (dayTitles && dayTitles[dateKey]) || '';
-                          const input = prompt(`Edit Subtitle for ${rankGroup.dayLabel}:`, current);
-                          if (input !== null) {
-                            onUpdateDayTitle(dateKey, input.trim());
-                          }
-                        }}
+                  {(() => {
+                    const { dayLabel, subtitle } = getDateRankTitle(dateKey, rankGroup.dayLabel);
+                    return (
+                    <div
+                      onClick={() => toggleDayExpanded(dateKey)}
+                      style={{ display: 'flex', alignItems: 'flex-start', gap: '0.5rem', marginBottom: isDayExpanded ? '1.25rem' : '0', marginTop: '0.2rem', cursor: 'pointer' }}
+                    >
+                      <ChevronDown
+                        size={16}
                         style={{
-                          background: 'transparent',
-                          border: 'none',
-                          color: 'rgba(0, 0, 0, 0.4)',
-                          padding: '0.35rem',
-                          borderRadius: '50%',
-                          cursor: 'pointer',
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          transition: 'all 0.2s ease'
+                          color: 'rgba(0,0,0,0.4)',
+                          flexShrink: 0,
+                          marginTop: '0.2rem',
+                          transition: 'transform 0.2s ease',
+                          transform: isDayExpanded ? 'rotate(0deg)' : 'rotate(-90deg)'
                         }}
-                        onMouseOver={(e) => { e.currentTarget.style.color = '#111111'; e.currentTarget.style.background = 'rgba(0,0,0,0.06)'; }}
-                        onMouseOut={(e) => { e.currentTarget.style.color = 'rgba(0, 0, 0, 0.4)'; e.currentTarget.style.background = 'transparent'; }}
-                        title="Edit Date Subtitle"
-                      >
-                        <Edit size={16} />
-                      </button>
-                    )}
-                  </div>
+                      />
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        {subtitle && (
+                          <div style={{
+                            fontSize: '0.7rem',
+                            fontWeight: 700,
+                            letterSpacing: '0.09em',
+                            textTransform: 'uppercase',
+                            color: '#999999',
+                            marginBottom: '0.15rem'
+                          }}>
+                            {dayLabel}
+                          </div>
+                        )}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', flexWrap: 'wrap' }}>
+                          <h3 style={{
+                            fontSize: '1.05rem',
+                            fontFamily: 'var(--font-sans)',
+                            fontWeight: 700,
+                            color: '#111111',
+                            margin: 0,
+                            lineHeight: 1.3
+                          }}>
+                            {subtitle || dayLabel}
+                          </h3>
+
+                          {canEdit && onUpdateDayTitle && (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                const current = (dayTitles && dayTitles[dateKey]) || '';
+                                const input = prompt(`Edit Subtitle for ${rankGroup.dayLabel}:`, current);
+                                if (input !== null) {
+                                  onUpdateDayTitle(dateKey, input.trim());
+                                }
+                              }}
+                              style={{
+                                background: 'transparent',
+                                border: 'none',
+                                color: 'rgba(0, 0, 0, 0.35)',
+                                padding: '0.2rem',
+                                borderRadius: '50%',
+                                cursor: 'pointer',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                transition: 'all 0.2s ease'
+                              }}
+                              onMouseOver={(e) => { e.currentTarget.style.color = '#111111'; e.currentTarget.style.background = 'rgba(0,0,0,0.06)'; }}
+                              onMouseOut={(e) => { e.currentTarget.style.color = 'rgba(0, 0, 0, 0.35)'; e.currentTarget.style.background = 'transparent'; }}
+                              title="Edit Date Subtitle"
+                            >
+                              <Edit size={12} />
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                    );
+                  })()}
 
                   {isDayExpanded && (
                   <div style={{
