@@ -8,8 +8,6 @@ export function LoginModal({ isOpen, onClose, errorMsg, onSignIn }) {
 
   const handleGoogleSignIn = async () => {
     setIsSigningIn(true);
-    // Navigates away to Google and back; App.jsx picks up the result via
-    // getRedirectResult/onAuthStateChanged once the browser returns here.
     await onSignIn();
     setIsSigningIn(false);
   };
