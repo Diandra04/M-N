@@ -96,7 +96,7 @@ export function LoginModal({ isOpen, onClose, errorMsg, onSignIn }) {
           display: 'flex',
           alignItems: 'flex-start',
           justifyContent: 'center',
-          gap: '0.4rem',
+          gap: '0.25rem',
           fontSize: '0.75rem',
           color: '#888888'
         }}>

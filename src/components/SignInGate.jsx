@@ -71,7 +71,7 @@ export function SignInGate({ errorMsg, onSignIn }) {
           {isSigningIn ? 'Signing in…' : 'Sign In with Google'}
         </button>
 
-        <div style={{ marginTop: '1.5rem', display: 'flex', alignItems: 'flex-start', justifyContent: 'center', gap: '0.4rem', fontSize: '0.75rem', color: 'rgba(255,255,255,0.6)' }}>
+        <div style={{ marginTop: '1.5rem', display: 'flex', alignItems: 'flex-start', justifyContent: 'center', gap: '0.25rem', fontSize: '0.75rem', color: 'rgba(255,255,255,0.6)' }}>
           <ShieldCheck size={14} style={{ flexShrink: 0, marginTop: '0.15rem' }} />
           <span>Only Manzi &amp; Nikita's own accounts can access this planner</span>
         </div>
