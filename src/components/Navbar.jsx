@@ -1,5 +1,5 @@
 import React from 'react';
-import { UserCheck } from 'lucide-react';
+import { UserCheck, LogOut } from 'lucide-react';
 
 export function Navbar({
   couple,
@@ -10,6 +10,7 @@ export function Navbar({
   const isManzi = currentUser === 'MANZI';
   const isNikita = currentUser === 'NIKITA';
   const isSignedIn = isManzi || isNikita;
+  const roleColor = isManzi ? '#8B5E3C' : '#E08298';
 
   return (
     <nav style={{
@@ -33,27 +34,72 @@ export function Navbar({
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.55rem', flexWrap: 'wrap' }}>
-          <button
-            onClick={() => (isSignedIn ? onLogout() : onOpenLoginModal())}
-            style={{
-              background: isManzi ? '#8B5E3C' : isNikita ? '#E08298' : 'transparent',
-              color: isSignedIn ? '#ffffff' : 'var(--text-primary)',
-              border: isSignedIn ? 'none' : '1px solid var(--border-color)',
-              padding: '0.45rem 1.1rem',
-              borderRadius: '20px',
-              fontSize: '0.82rem',
-              fontWeight: 600,
-              cursor: 'pointer',
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '0.45rem',
-              transition: 'all 0.25s ease'
-            }}
-            title={isSignedIn ? 'Click to sign out' : 'Sign in'}
-          >
-            <UserCheck size={14} />
-            <span>{isManzi ? 'Manzi (Sign Out)' : isNikita ? 'Nikita (Sign Out)' : 'Sign In'}</span>
-          </button>
+          {isSignedIn ? (
+            <>
+              <span style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '0.4rem',
+                padding: '0.4rem 0.9rem 0.4rem 0.6rem',
+                borderRadius: '20px',
+                background: 'var(--badge-bg)',
+                fontSize: '0.8rem',
+                fontWeight: 600,
+                color: 'var(--text-primary)'
+              }}>
+                <span style={{
+                  width: '8px',
+                  height: '8px',
+                  borderRadius: '50%',
+                  background: roleColor
+                }} />
+                {isManzi ? 'Manzi' : 'Nikita'}
+              </span>
+              <button
+                onClick={onLogout}
+                title="Sign out"
+                aria-label="Sign out"
+                style={{
+                  background: 'transparent',
+                  color: 'var(--text-muted)',
+                  border: '1px solid var(--border-color)',
+                  width: '34px',
+                  height: '34px',
+                  borderRadius: '50%',
+                  cursor: 'pointer',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  transition: 'all 0.2s ease'
+                }}
+                onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'var(--border-active)'; e.currentTarget.style.color = 'var(--text-primary)'; }}
+                onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--border-color)'; e.currentTarget.style.color = 'var(--text-muted)'; }}
+              >
+                <LogOut size={15} />
+              </button>
+            </>
+          ) : (
+            <button
+              onClick={onOpenLoginModal}
+              style={{
+                background: 'transparent',
+                color: 'var(--text-primary)',
+                border: '1px solid var(--border-color)',
+                padding: '0.45rem 1.1rem',
+                borderRadius: '20px',
+                fontSize: '0.82rem',
+                fontWeight: 600,
+                cursor: 'pointer',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '0.45rem',
+                transition: 'all 0.25s ease'
+              }}
+            >
+              <UserCheck size={14} />
+              <span>Sign In</span>
+            </button>
+          )}
         </div>
       </div>
     </nav>

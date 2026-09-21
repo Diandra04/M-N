@@ -328,7 +328,6 @@ export default function App() {
 
       <SecretVault
         currentUser={currentUser}
-        onLogout={handleLogout}
         events={data.events || []}
         sharedTodos={data.sharedTodos || []}
         vows={privateData.vows || ''}

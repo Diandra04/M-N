@@ -1,12 +1,11 @@
 import React, { useState } from 'react';
 import {
-  Lock, Plus, Trash2, Key, ShieldCheck, CheckCircle2, FileSignature,
+  Lock, Plus, Trash2, Key, CheckCircle2, FileSignature,
   Users, Calendar as CalendarIcon, DollarSign, Calculator, Folder, Upload, Download, FileText, Check, Heart, Save, Sparkles, Clock, MapPin, Send, XCircle, ArrowLeft
 } from 'lucide-react';
 
 export function SecretVault({
   currentUser,
-  onLogout,
   events = [],
   sharedTodos = [],
   vows = '',
@@ -847,33 +846,6 @@ export function SecretVault({
                 Manage private wedding vows, restaurant contributions, budget calculations, classified documents, and joint couple checklists!
               </p>
             </div>
-
-            {(isManzi || isNikita) && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                <span style={{
-                  padding: '0.55rem 1.1rem',
-                  borderRadius: '20px',
-                  fontSize: '0.85rem',
-                  fontWeight: 700,
-                  background: isManzi ? '#8B5E3C' : '#E08298',
-                  color: '#ffffff',
-                  border: '1px solid rgba(255, 255, 255, 0.25)',
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '0.5rem'
-                }}>
-                  <ShieldCheck size={16} />
-                  Profile: {isManzi ? 'Manzi' : 'Nikita'}
-                </span>
-                <button
-                  onClick={onLogout}
-                  className="btn-outline btn-sm"
-                  style={{ borderColor: 'rgba(255,255,255,0.25)', color: '#ffffff' }}
-                >
-                  Sign Out
-                </button>
-              </div>
-            )}
           </div>
 
           {!activeTab && (
@@ -1282,10 +1254,26 @@ export function SecretVault({
 
             <button
               onClick={handleBackToHub}
-              className="btn-outline btn-sm"
-              style={{ marginBottom: '1.5rem', borderColor: 'rgba(255,255,255,0.25)', color: '#ffffff' }}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+                marginBottom: '1.5rem',
+                padding: '0.6rem 1.3rem',
+                borderRadius: '30px',
+                border: 'none',
+                background: '#ffffff',
+                color: '#111111',
+                fontSize: '0.85rem',
+                fontWeight: 700,
+                cursor: 'pointer',
+                boxShadow: '0 4px 16px rgba(0,0,0,0.3)',
+                transition: 'transform 0.2s ease'
+              }}
+              onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-1px)'; }}
+              onMouseLeave={(e) => { e.currentTarget.style.transform = 'none'; }}
             >
-              <ArrowLeft size={14} /> Back to Hub
+              <ArrowLeft size={15} /> Back to Hub
             </button>
 
             {activeTab === 'VOWS' && (
