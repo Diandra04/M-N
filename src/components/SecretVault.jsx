@@ -4,6 +4,45 @@ import {
   Users, Calendar as CalendarIcon, DollarSign, Calculator, Folder, Upload, Download, FileText, Check, Heart, Save, Sparkles, Clock, MapPin, Send, XCircle, ArrowLeft
 } from 'lucide-react';
 
+// Keeps its own draft so each keystroke doesn't trigger a Firestore write;
+// commits on blur/Enter. Remount via `key` when the saved value changes.
+function EditableCell({ value, onCommit, type = 'text', label, style }) {
+  const [draft, setDraft] = useState(String(value ?? ''));
+
+  const commit = () => {
+    if (draft !== String(value ?? '')) onCommit(draft);
+  };
+
+  return (
+    <input
+      type={type}
+      value={draft}
+      aria-label={label}
+      min={type === 'number' ? 0 : undefined}
+      step={type === 'number' ? 'any' : undefined}
+      onChange={(e) => setDraft(e.target.value)}
+      onBlur={commit}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter') e.currentTarget.blur();
+        if (e.key === 'Escape') {
+          setDraft(String(value ?? ''));
+          e.currentTarget.blur();
+        }
+      }}
+      style={{
+        background: 'rgba(255,255,255,0.06)',
+        border: '1px solid rgba(255,255,255,0.18)',
+        borderRadius: '8px',
+        color: '#ffffff',
+        padding: '0.3rem 0.55rem',
+        fontSize: 'inherit',
+        fontFamily: 'inherit',
+        ...style
+      }}
+    />
+  );
+}
+
 export function SecretVault({
   currentUser,
   events = [],
@@ -359,6 +398,15 @@ export function SecretVault({
 
   const handleChangeGuestRsvp = (guestId, rsvp) => {
     setGuestList(prev => prev.map(g => (g.id === guestId ? { ...g, rsvp } : g)));
+  };
+
+  const handleChangeGuestAmount = (guestId, value) => {
+    const amount = Math.max(0, Number(value) || 0);
+    setGuestList(prev => prev.map(g => (g.id === guestId ? { ...g, amount } : g)));
+  };
+
+  const handleChangeGuestNotes = (guestId, notes) => {
+    setGuestList(prev => prev.map(g => (g.id === guestId ? { ...g, notes } : g)));
   };
 
   const handleDeleteGuest = (guestId) => {
@@ -1601,7 +1649,23 @@ export function SecretVault({
                               <option value="Declined">Declined</option>
                             </select>
                           </td>
-                          <td style={{ padding: '0.85rem 1rem', fontWeight: 700 }}>${g.amount || 0}</td>
+                          <td style={{ padding: '0.85rem 1rem', fontWeight: 700 }}>
+                            {canEdit ? (
+                              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
+                                $
+                                <EditableCell
+                                  key={`${g.id}-amount-${g.amount || 0}`}
+                                  type="number"
+                                  label={`Amount paid by ${g.name}`}
+                                  value={g.amount || 0}
+                                  onCommit={(v) => handleChangeGuestAmount(g.id, v)}
+                                  style={{ width: '90px', fontWeight: 700 }}
+                                />
+                              </span>
+                            ) : (
+                              <>${g.amount || 0}</>
+                            )}
+                          </td>
                           <td style={{ padding: '0.85rem 1rem' }}>
                             <button
                               onClick={() => handleToggleGuestContribution(g.id)}
@@ -1620,7 +1684,19 @@ export function SecretVault({
                               {g.contributed ? 'Paid' : 'Not Paid'}
                             </button>
                           </td>
-                          <td style={{ padding: '0.85rem 1rem', color: 'rgba(255,255,255,0.7)', fontSize: '0.82rem' }}>{g.notes}</td>
+                          <td style={{ padding: '0.85rem 1rem', color: 'rgba(255,255,255,0.7)', fontSize: '0.82rem' }}>
+                            {canEdit ? (
+                              <EditableCell
+                                key={`${g.id}-notes-${g.notes || ''}`}
+                                label={`Notes for ${g.name}`}
+                                value={g.notes || ''}
+                                onCommit={(v) => handleChangeGuestNotes(g.id, v)}
+                                style={{ width: '100%', minWidth: '160px' }}
+                              />
+                            ) : (
+                              g.notes
+                            )}
+                          </td>
                           <td style={{ padding: '0.85rem 1rem', textAlign: 'right' }}>
                             {canEdit && (
                               <button onClick={() => handleDeleteGuest(g.id)} style={{ background: 'none', border: 'none', color: '#ff6b6b', cursor: 'pointer' }}>
