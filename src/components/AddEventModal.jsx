@@ -3,6 +3,17 @@ import { X, Upload, RotateCcw } from 'lucide-react';
 
 const DEFAULT_EVENT_IMAGE = '/images/backgroungImage.jpg';
 
+// Produces "Thursday, Oct 15" — the itinerary card badge splits this on the
+// comma to show just "Oct 15", so the shape matters.
+const formatDayLabel = (dateStr) => {
+  if (!dateStr) return '';
+  // Parsed as local midnight on purpose: a bare 'YYYY-MM-DD' is read as UTC,
+  // which lands on the previous day in Toronto's timezone.
+  const parsed = new Date(`${dateStr}T00:00:00`);
+  if (Number.isNaN(parsed.getTime())) return dateStr;
+  return parsed.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' });
+};
+
 export function AddEventModal({ isOpen, onClose, onSave, editingEvent, dayTitles = {} }) {
   const [date, setDate] = useState('2026-10-15');
   const [dayLabel, setDayLabel] = useState('Thursday, Oct 15');
@@ -20,7 +31,7 @@ export function AddEventModal({ isOpen, onClose, onSave, editingEvent, dayTitles
     if (editingEvent) {
       const initialDate = editingEvent.date || '2026-10-15';
       setDate(initialDate);
-      setDayLabel(editingEvent.dayLabel || 'Thursday, Oct 15');
+      setDayLabel(editingEvent.dayLabel || formatDayLabel(initialDate));
       setDateTitle(editingEvent.dateTitle || dayTitles[initialDate] || '');
       setTime(editingEvent.time || '07:30 PM');
       setTitle(editingEvent.title || '');
@@ -33,7 +44,7 @@ export function AddEventModal({ isOpen, onClose, onSave, editingEvent, dayTitles
     } else {
       const initialDate = '2026-10-15';
       setDate(initialDate);
-      setDayLabel('Thursday, Oct 15');
+      setDayLabel(formatDayLabel(initialDate));
       setDateTitle(dayTitles[initialDate] || '');
       setTime('07:30 PM');
       setTitle('');
@@ -49,15 +60,7 @@ export function AddEventModal({ isOpen, onClose, onSave, editingEvent, dayTitles
   const handleDateChange = (val) => {
     setDate(val);
     setDateTitle(dayTitles[val] || '');
-    switch (val) {
-      case '2026-10-10': setDayLabel('Saturday, Oct 10'); break;
-      case '2026-10-13': setDayLabel('Tuesday, Oct 13'); break;
-      case '2026-10-14': setDayLabel('Wednesday, Oct 14'); break;
-      case '2026-10-15': setDayLabel('Thursday, Oct 15'); break;
-      case '2026-10-16': setDayLabel('Friday, Oct 16'); break;
-      case '2026-10-17': setDayLabel('Saturday, Oct 17'); break;
-      default: setDayLabel(val); break;
-    }
+    setDayLabel(formatDayLabel(val));
   };
 
   const handleFileUpload = (e) => {
@@ -114,18 +117,18 @@ export function AddEventModal({ isOpen, onClose, onSave, editingEvent, dayTitles
           <div className="grid-2">
             <div className="form-group">
               <label className="form-label">Event Date</label>
-              <select 
-                value={date} 
-                onChange={(e) => handleDateChange(e.target.value)} 
-                className="form-select"
-              >
-                <option value="2026-10-10">Oct 10 (Irembo Day)</option>
-                <option value="2026-10-13">Oct 13 (Nails Day)</option>
-                <option value="2026-10-14">Oct 14 (Arrival & Drive)</option>
-                <option value="2026-10-15">Oct 15 (Civil Ceremony Day)</option>
-                <option value="2026-10-16">Oct 16 (Brunch & Family Dinner)</option>
-                <option value="2026-10-17">Oct 17 (Departure Day)</option>
-              </select>
+              <input
+                type="date"
+                value={date}
+                onChange={(e) => handleDateChange(e.target.value)}
+                className="form-input"
+                required
+              />
+              {dayLabel && (
+                <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '0.3rem' }}>
+                  {dayLabel}
+                </div>
+              )}
             </div>
 
             <div className="form-group">
